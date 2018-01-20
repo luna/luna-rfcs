@@ -1,6 +1,6 @@
 <p align="center">
 <img src="https://github.com/luna/luna-studio/raw/master/resources/logo.ico" 
-	style="margin: 0 auto;">
+    style="margin: 0 auto;">
 </p>
 <h1 align="center">Luna RFCs</h1>
 <h3 align="center">
@@ -169,33 +169,34 @@ is usually given because the time is not right to consider or implement such a
 feature for now.
 
 ### Label Descriptions
+As part of the RFC process, the RFC pull request will have some of the following
+labels assigned to it. This table provides an overview of what they mean.
 
-C - Language
-C - Compiler
-C - Syntax
-C - Type System
-C - Semantics
-C - Libraries
-C - RFC Process
-C - GUI
-C - Ecosystem
-C - Tooling
-
-T - Breaking Change
-T - Non-Breaking Change
-
-B - Needs Summary
-B - Waiting on Author
-B - Waiting on Community Feedback
-B - Waiting on Shepherd
-B - Waiting on Team
-
-S - Accepted
-S - Active
-S - Postponed
-S - Rejected
-S - Discussion 
-S - Final Comment Period
+| Label                             | Description                                                                       |
+|:----------------------------------|:----------------------------------------------------------------------------------|
+| C - Language                      | The RFC deals with the Luna language specification.                               |
+| C - Compiler                      | The RFC deals with the luna compiler.                                             |
+| C - Syntax                        | The RFC proposes syntactic changes or additions to Luna.                          |
+| C - Type System                   | The RFC proposes changes or additions to the type system.                         |
+| C - Semantics                     | The RFC proposes changes to language semantics.                                   |
+| C - Libraries                     | The RFC proposes changes to the Luna standard library.                            |
+| C - RFC Process                   | The RFC proposes changes to this RFC process.                                     |
+| C - GUI                           | The RFC proposes changes or additions to the Luna Studio GUI.                     |
+| C - Ecosystem                     | The RFC proposes changes to the ecosystem as a whole.                             |
+| C - Tooling                       | The RFC proposes changes to tooling surrounding Luna.                             |
+| T - Breaking Change               | The changes proposed by the RFC are breaking.                                     |
+| T - Non-Breaking Change           | The changed proposed by the RFC are non-breaking.                                 |
+| B - Needs Summary                 | The RFC pull request is awaiting a meeting summary.                               |
+| B - Waiting on Author             | The RFC pull request is waiting for author input.                                 |
+| B - Waiting on Community Feedback | The RFC pull request is waiting for community feedback.                           |
+| B - Waiting on Shepherd           | The RFC pull request is waiting for input from the shepherd.                      |
+| B - Waiting on Team               | The RFC pull request is waiting on input from the Luna core team.                 |
+| S - Accepted                      | The RFC has been accepted.                                                        |
+| S - Active                        | The RFC is active as described in [Active RFCs](#active-rfcs).                    |
+| S - Postponed                     | The RFC has been postponed as described in [RFC Postponement](#rfc-postponement). |
+| S - Rejected                      | The RFC has been rejected.                                                        |
+| S - Discussion                    | The RFC is currently under discussion.                                            |
+| S - Final Comment Period          | The RFC is in its Final Comment Period.                                           |
 
 ## Credits
 This repository and process takes significant inspiration from the 
