@@ -39,6 +39,21 @@ process:
 
 ## Table of Contents
 
+- [Introduction](#introduction)
+- [Table of Contents](#table-of-contents)
+- [Creating an RFC](#creating-an-rfc)
+    + [Before Creating an RFC](#before-creating-an-rfc)
+    + [The RFC Process](#the-rfc-process)
+    + [Reviewing RFCs](#reviewing-rfcs)
+- [The RFC Life-Cycle](#the-rfc-life-cycle)
+    + [Active RFCs](#active-rfcs)
+    + [RFC Implementation](#rfc-implementation)
+    + [RFC Postponement](#rfc-postponement)
+    + [Label Descriptions](#label-descriptions)
+- [Credits](#credits)
+- [License](#license)
+    + [Contributions](#contributions)
+
 ## Creating an RFC
 While informal, we do aim to provide a basic outline for the process of creating
 an RFC. The intention of this process is that RFCs arrive in a state with enough
@@ -174,29 +189,29 @@ labels assigned to it. This table provides an overview of what they mean.
 
 | Label                             | Description                                                                       |
 |:----------------------------------|:----------------------------------------------------------------------------------|
-| C - Language                      | The RFC deals with the Luna language specification.                               |
-| C - Compiler                      | The RFC deals with the luna compiler.                                             |
-| C - Syntax                        | The RFC proposes syntactic changes or additions to Luna.                          |
-| C - Type System                   | The RFC proposes changes or additions to the type system.                         |
-| C - Semantics                     | The RFC proposes changes to language semantics.                                   |
-| C - Libraries                     | The RFC proposes changes to the Luna standard library.                            |
-| C - RFC Process                   | The RFC proposes changes to this RFC process.                                     |
-| C - GUI                           | The RFC proposes changes or additions to the Luna Studio GUI.                     |
-| C - Ecosystem                     | The RFC proposes changes to the ecosystem as a whole.                             |
-| C - Tooling                       | The RFC proposes changes to tooling surrounding Luna.                             |
-| T - Breaking Change               | The changes proposed by the RFC are breaking.                                     |
-| T - Non-Breaking Change           | The changed proposed by the RFC are non-breaking.                                 |
 | B - Needs Summary                 | The RFC pull request is awaiting a meeting summary.                               |
 | B - Waiting on Author             | The RFC pull request is waiting for author input.                                 |
 | B - Waiting on Community Feedback | The RFC pull request is waiting for community feedback.                           |
 | B - Waiting on Shepherd           | The RFC pull request is waiting for input from the shepherd.                      |
 | B - Waiting on Team               | The RFC pull request is waiting on input from the Luna core team.                 |
+| C - Compiler                      | The RFC deals with the luna compiler.                                             |
+| C - Ecosystem                     | The RFC proposes changes to the ecosystem as a whole.                             |
+| C - GUI                           | The RFC proposes changes or additions to the Luna Studio GUI.                     |
+| C - Language                      | The RFC deals with the Luna language specification.                               |
+| C - Libraries                     | The RFC proposes changes to the Luna standard library.                            |
+| C - RFC Process                   | The RFC proposes changes to this RFC process.                                     |
+| C - Semantics                     | The RFC proposes changes to language semantics.                                   |
+| C - Syntax                        | The RFC proposes syntactic changes or additions to Luna.                          |
+| C - Tooling                       | The RFC proposes changes to tooling surrounding Luna.                             |
+| C - Type System                   | The RFC proposes changes or additions to the type system.                         |
 | S - Accepted                      | The RFC has been accepted.                                                        |
 | S - Active                        | The RFC is active as described in [Active RFCs](#active-rfcs).                    |
-| S - Postponed                     | The RFC has been postponed as described in [RFC Postponement](#rfc-postponement). |
-| S - Rejected                      | The RFC has been rejected.                                                        |
 | S - Discussion                    | The RFC is currently under discussion.                                            |
 | S - Final Comment Period          | The RFC is in its Final Comment Period.                                           |
+| S - Postponed                     | The RFC has been postponed as described in [RFC Postponement](#rfc-postponement). |
+| S - Rejected                      | The RFC has been rejected.                                                        |
+| T - Breaking Change               | The changes proposed by the RFC are breaking.                                     |
+| T - Non-Breaking Change           | The changed proposed by the RFC are non-breaking.                                 |
 
 ## Credits
 This repository and process takes significant inspiration from the 
