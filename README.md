@@ -40,14 +40,79 @@ process:
 ## Table of Contents
 
 ## Creating an RFC
+While informal, we do aim to provide a basic outline for the process of creating
+an RFC. The intention of this process is that RFCs arrive in a state with enough
+detail to spark discussion, and then evolve through discussion with all 
+interested parties.
 
 ### Before Creating an RFC
+Keep in mind that a hastily-created RFC can hurt discussion and its chances of
+being accepted, even if the idea proposed is excellent! A half-baked proposal, 
+a previously-rejected idea, or a feature that doesn't align with our vision for
+Luna could be rejected swiftly, making the unprepared contributor feel 
+demotivated. Doing a little bit of preparatory legwork can make the RFC process
+that much more smooth.
+
+While there is no specific process for submitting an RFC, we do recommend that 
+you talk to other members of the community to find out whether your proposal
+would have support, and fits with the broader vision for Luna as a whole. We do
+recommend discussing the proposed RFC in the 
+[Luna Discord](https://discord.gg/RNrbSux) beforehand to see what the potential
+community reception would be.
+
+If the idea receives encouraging feedback from the core team, as well as the
+community, it is an indication that the RFC is worth pursuing.
 
 ### The RFC Process
+To summarise the end goal of the RFC process, the aim is to merge the proposal
+(as a markdown file) into the RFC Repository. At this point, the RFC becomes 
+'Active', and may then be implemented with the goal of eventual inclusion into
+Luna.
+
+The process for creating an RFC can be outlined as follows:
+
+1. Fork the [RFC Repository](https://github.com/luna/luna-rfcs).
+2. Copy [`0000-rfc-template.md`](https://github.com/luna/luna-rfcs/blob/master/0000-rfc-template.md)
+   to `text/0000-my-proposal.md` (where `my-proposal` is descriptive for the 
+   feature).
+
 
 ## The RFC Life-Cycle
 
 ## Label Descriptions
+
+C - Language
+C - Compiler
+C - Syntax
+C - Type System
+C - Semantics
+C - Libraries
+C - RFC Process
+C - GUI
+C - Ecosystem
+C - Tooling
+
+T - Breaking Change
+T - Non-Breaking Change
+
+P - Low
+P - Medium
+P - High
+
+S - Needs Summary
+S - Waiting on Author
+S - Waiting on Community Feedback
+S - Waiting on Shepherd
+S - Waiting on Team
+
+Open
+Accepted
+Discussion 
+Final Comment Period
+Awaiting Final Decision
+Postponed
+Active
+Shepherded
 
 ## Credits
 This repository and process takes significant inspiration from the 
