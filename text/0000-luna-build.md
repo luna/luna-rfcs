@@ -64,6 +64,7 @@ project-name/
  │   └─ Main.luna
  ├─ LICENSE
  ├─ README.ldoc
+ ├─ README.md
  └─ .gitignore
 ```
 
@@ -234,6 +235,7 @@ project-name/
  │   └─ Main.luna
  ├─ LICENSE
  ├─ README.ldoc
+ ├─ README.md
  └─ .gitignore
 ```
 
@@ -266,6 +268,7 @@ The directories and files are described as follows:
   If you attempt to publish the project without a license, an error will be 
   generated. 
 - `README.ldoc` Contains the project readme in Luna documentation syntax.
+- `README.md` Contains the GitHub readme in Markdown syntax.
 - `.gitignore`: A default `.gitignore` set up to ignore Luna project build 
   artefacts.
 
@@ -282,7 +285,7 @@ elements are automatically discovered for Luna Projects:
 - **License:** Automatically determined from the `LICENSE` file in the project.
 - **Build Type:** Luna uses the presence of a `main` function in `Main.luna` to
   determine whether the project is an executable or a library. If there is no
-  main function it is build as a library, and if there is a main function, it is
+  main function it is built as a library, and if there is a main function, it is
   built as an executable _and_ library.
 - **Exposed Modules:** This is automatically discovered from the code structure.
   All modules in project `Foo` that should be internal only should be inside a
@@ -389,7 +392,8 @@ distributions.
 However, Luna will also provide the tooling (the RepoManager) API to allow 
 people to use the same accounts system to host their own package repository for
 Luna packages (e.g. in a corporate setting). Such repositories can be source
-distributions, binary distributions or a combination of the two. 
+distributions, binary distributions or a combination of the two. This additional
+tooling will not be available until after the Luna 2.0 release. 
 
 The default package repository is specified in the Luna Build configuration file
 and alternative repositories can also be stored against a name and specified 
@@ -404,6 +408,8 @@ sub-commands.
 The ability to interface with the build system from Luna code itself would prove
 invaluable for self-configuring packages and the like, such as those that can be
 found in the python community. 
+
+This API will not be made available until after the Luna 2.0 release. 
 
 # Drawbacks
 While a comprehensive package management and build-tool infrastructure is 
