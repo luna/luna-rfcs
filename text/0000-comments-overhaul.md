@@ -47,10 +47,10 @@ to isolate the problem using the graph's visual debugging, but that hasn't
 helped, so you're going back to that old standby of commenting out code until
 you find the problem.
 
-Luna actually provides _two_ ways to do this, the first of which is known as a
-'disable comment'. Disable comments in Luna are very similar to commenting out
-code in any other language. Just prefix a line with `##` and it'll stop the code
-from executing. If you're in the graph view, select some nodes, and hit `Ctrl+/`
+To do this, Luna provides the 'disable comment' in both the visual and textual
+syntaxes. Disable comments in Luna are very similar to commenting out code in 
+any other language. Just prefix a line with `##` and it'll stop the code from 
+executing. If you're in the graph view, select some nodes, and hit `Ctrl+/`
 (or `Cmd + /` on MacOS), and they'll be commented out!
 
 ```
@@ -70,7 +70,7 @@ The other major difference, is what happens when you comment out a block. If you
 disable a line that introduces a block scope, this is sufficient to disable 
 _all_ of the expressions contained in this scope. In the following example, the
 single disable comment actually comments out the entire block down to 
-`print "hi!"`.
+`print "hi!"`, so the only code that will run from `func` is that line.
 
 ```
 def func a:
@@ -80,20 +80,6 @@ def func a:
         quux
 
     print "hi!"
-```
-
-Now we promised a _second_ way to go about commenting out code, and this one is
-actually slightly different! Say you want to work on some code internally while 
-still preserving the correct evaluation of your program. Luna supports a comment
-called a 'freeze comment', that makes an expression (or set of expressions) 
-return the last calculated value. These look like a `#|`, and also prefix the
-line they apply to. They have the same caveats about blocks as the disable 
-comments, but in the example below, the expression `hello` still has the value 
-of `"Hello, World!"`.
-
-```
-def main:
-    #| hello = "Hello, World!"
 ```
 
 ## Reminders in Your Code
@@ -115,7 +101,8 @@ is automatically prefixed with the `#` for translation into the textual syntax,
 so you don't need to do that!
 
 Along similar lines as todo comments, Luna also supports `FIXME` and `BUG` 
-annotation comments that are used in the same way:
+annotation comments that are used in the same way, each with a distinctive 
+visual style:
 
 ```
 def broken a b:
@@ -141,11 +128,12 @@ you can carefully document anything you see fit!
 There are a few things to keep in mind when writing your documentation comments:
 
 - The first line should be a short explanation of whatever you're documenting, 
-  as this line will be used when space is limited.
+  as this line will be used when space is limited. This line is defined up until
+  the first blank line in the comment.
 - As part of the rendering process, a function signature, with types, will be
   included in the documentation, even if you don't explicitly specify the type
   signature. 
-- Keep your doc comments short and to the point, as in Luna we value code that
+- Keep your doc comments short and to the point as, in Luna, we value code that
   is self-documenting.
 
 Now the documentation comment syntax is best explained by example, rather than
@@ -162,7 +150,7 @@ of a documentation comment can be seen below:
 # 
 # blank line.
 # 
-# !Block Heading
+# Block Heading
 #   This is a block, and here I can talk about whatever is important to the 
 #   block. In here I have a numbered list:
 #     - First Number
@@ -174,15 +162,15 @@ of a documentation comment can be seen below:
 #       * Bulleted sub-list, but you can mix numbers and bullets.
 # 
 # Sometimes I might want to embed a code block in my documentation as a usage
-# example. I can do this as > frobnicate foo bar <, but for bigger blocks I can:
+# example. I can do this as `frobnicate foo bar`, but for bigger blocks I can:
 #
 #   > import Math
 #   > frobnicate "a" (Math.sqrt b)
 # 
-# @a: Here I'm making an item reference to the first function argument.
-# @b: Here I describe the second. 
+# `a`: Here I'm making an item reference to the first function argument.
+# `b`: Here I describe the second. 
 #
-# @return: Here I can talk about the return value of the function.
+# `return`: Here I can talk about the return value of the function.
 # 
 # You can find more information about doc comments in Luna by following this 
 # [link -> https://luna-lang.gitbooks.io/docs/].
@@ -204,8 +192,6 @@ comment types:
   the line below the comment.
 - **Disable Comments:** These comments disable a line or block of code, meaning
   that the code in question is not executed by the Luna runtime.
-- **Freeze Comments:** These comments freeze the execution of a portion of code.
-  At runtime, frozen code will present the last calculated value in its place.
 
 The visual and textual syntax, and semantics for such comment types are 
 described in the following subsections. 
@@ -250,8 +236,8 @@ variations in style between codebases. It supports the following features:
 - **Paragraphing:** Paragraphs are separated by one or more entirely blank 
   lines.
 - **Sectioning:** Sections are created using indentation. Each indentation of
-  two spaces creates a new level of section. If the Line above the section is
-  started with a `!`, the line becomes the section heading. 
+  two spaces creates a new level of section. The line immediately above the
+  indented block is rendered as the section heading.
 - **Lists:** Luna documentation comments support both bulleted and numbered 
   lists. To create a bulleted list, indent the line by two spaces, and use an
   asterisk: `*`. For numbered lists, indent the line by two spaces, and use a 
@@ -260,20 +246,22 @@ variations in style between codebases. It supports the following features:
   reference allows the documentation to reference a name in the code (e.g. an
   argument to a function), and provide associated documentation. They must refer
   to valid identifiers, otherwise a parse error is raised. There is a special,
-  reserved reference `@return`, for documenting the return value of a function.
+  reserved reference `return`, for documenting the return value of a function.
+  These item references are automatically parsed within code snippets (see 
+  below), and are linked to the references. 
 
 ```
-item-reference = "@", identifier-name, ": ", {" "}, {text-char};
+item-reference = "`", identifier-name, "`: ", {" "}, {text-char};
 ```
 
-- **Code Snippets:** You can embed inline code snippets by using `>` and `<` to
-  begin and end the block. These characters may be escaped `\>` and `\<` to 
-  occur within the block. You may also create a multiline code-block using a
-  two-space indent, and beginning each line of the block with `> `. 
+- **Code Snippets:** You can embed inline code snippets by using backticks to
+  begin and end the block. These characters may be escaped using `\` to occur 
+  within the block. You may also create a multiline code-block using a two-space
+  indent, and beginning each line of the block with `> `. 
 - **External Links:** External links can be embedded using the following syntax:
   `[link name -> link]`.
 - **Images:** Images can be embedded using a similar syntax 
-  `[# image name -> image-path`
+  `[# image name -> image-path]`
 - **Text Formatting:** Luna documentation comments also support basic textual
   formatting, using the `_` to denote italics, and the `*` to denote bold.
 
@@ -283,7 +271,8 @@ function signature, even if the signature is not provided by the user.
 Furthermore, if items are tagged using item references, a table will be created
 that displays the item name, type, and associated description.
 
-Finally, the first line of the doc-comment block is used as the summary for the documentation comment. This means it will be displayed anywhere the full
+Finally, the first line of the doc-comment block is used as the summary for the 
+documentation comment. This means it will be displayed anywhere the full
 documentation cannot be. 
 
 ## Tagging Comments
@@ -372,29 +361,6 @@ guidelines:
    cannot make it work, and execution is halted. For example, if we have 
    `## x = foo a b`, and the types of `x` and `a` are the same, there is an 
    implicit creation of `x = a` so execution can continue. 
-
-## Freeze Comments
-Freeze comments are a category of comment specific to Luna. They allow the 
-freezing of execution for certain portions of code in the codebase. Frozen nodes
-will output the last computed result for that node. Freezing comments conform
-to the following grammar: 
-
-```
-feeze-comment = "#|", [" "], {code-char};
-```
-
-Much like a disable comment, the code following the `#|` is parsed for display
-on the graph, but the last computed output value is used instead of continuing
-execution. Again, if the freeze comment is applied to a line that introduces a
-block scope, the entire block is considered to be frozen. 
-
-In the example below, the line line corresponding to `hello` will provide the 
-output `"Hello, World!"`, even though it is not currently being evaluated. 
-
-```
-def main:
-    #| hello = "Hello, World!"
-```
 
 # Drawbacks
 The main drawback to this proposal is that it is a breaking change for Luna's
