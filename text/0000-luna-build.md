@@ -45,18 +45,25 @@ using the integrated tool called Luna build! Today, we're going to look at a
 basic example of how you can create your own project and upload it to the 
 package repository.
 
-Creating a Luna project is as easy as typing `luna init test-project`, giving us
+Creating a Luna project is as easy as typing `luna new test-project`, giving us
 a new folder in our current directory called `test-project` containing all we 
 need to get started! If you take a look inside, your project will look something
 like this:
 
 ```
 project-name/
- ├─ .luna_project/
+ ├─ .luna-project/
+ │   ├─ config.yaml
+ │   ├─ deps.yaml
+ │   └─ luna-studio.yaml
  ├─ dist/ 
+ │   └─ .lir/
  ├─ src/
+ │   └─ Main.luna
  ├─ test/
+ │   └─ Main.luna
  ├─ LICENSE
+ ├─ README.ldoc
  └─ .gitignore
 ```
 
@@ -72,7 +79,7 @@ def main:
 ```
 
 We have some code, so let's build it! All it takes is running `luna build` on 
-our command line, and we have an executable. You can run it via `luna exec`, and
+our command line, and we have an executable. You can run it via `luna run`, and
 you'll see our greeting printed to `stdout`!
 
 Now, _real_ projects are a bit more complex than the stalwart hello world, so 
@@ -102,7 +109,7 @@ want to be able to check that we're firing _exactly_ the right number of
 missiles. Did someone say a test suite? 
 
 Luna Build includes robust testing support as well, and all you have to do is 
-go into the `test/` directory, and add your tests to `TestMain.luna`. Let's open
+go into the `test/` directory, and add your tests to `Main.luna`. Let's open
 this up and write a test!
 
 ```
@@ -113,7 +120,7 @@ def myTest:
     result = numMissiles.length
     result
 
-def TestMain:
+def Main:
     testResult = myTest
     print testResult
 ```
@@ -168,6 +175,10 @@ provides the following commands for use within a project:
   resolution operation. Each operation has an associated hash. When called with
   a hash, it rolls back the project's dependencies to the specified state.
 
+This RFC suggests the use of [Z3](https://github.com/Z3Prover/z3) for dependency
+resolution as it is a very well-optimised constraint solver and already has
+[Haskell Bindings](https://hackage.haskell.org/package/z3).
+
 ## Project Management
 Luna aims to automate the management of Luna projects as much as possible. As a
 result, it provides just a few commands that allow you to perform every task you
@@ -181,9 +192,9 @@ proposes extending the `luna` command with these following sub-commands:
   determined can be found below. As part of this, any dependencies that are not
   installed will be downloaded and installed into the global package database 
   for you, before being linked into your project sandbox.
-- `exec [FLAGS]`: Executes the application that has been built, passing the
-  provided flags.
-- `run [FLAGS]`: Executes the following: `luna build; luna exec FLAGS`.
+- `run [FLAGS]`: Builds the application if changes have been made, and then 
+  executes the resulting executable. Has a flag `--no-build` that can be passed
+  if you do not want to update the executable with your changes. 
 - `test`: This will run all the tests contained within the `test/` directory.
 - `clean`: This command will remove any artefacts built from the project, 
   including documentation, cached LIR and binaries. 
@@ -220,8 +231,9 @@ project-name/
  ├─ src/
  │   └─ Main.luna
  ├─ test/
- │   └─ TestMain.luna
+ │   └─ Main.luna
  ├─ LICENSE
+ ├─ README.ldoc
  └─ .gitignore
 ```
 
@@ -246,37 +258,16 @@ The directories and files are described as follows:
 - `src/`: This is the source directory for the project. It contains a blank
   `Main.luna` that is used as the project entry point.
 - `test/`: This directory is used to contain tests for the project. It contains
-  a default `TestMain.luna` which is executed as the entry point for running 
+  a default `Main.luna` which is executed as the entry point for running 
   your tests. By default, this will return a success or fail exit code to 
   `stdin` or `stderr`.
 - `LICENSE`: A license file as determined by your globally configured default. 
   If no default is set, the user will be prompted before a LICENSE is generated.
   If you attempt to publish the project without a license, an error will be 
   generated. 
+- `README.ldoc` Contains the project readme in Luna documentation syntax.
 - `.gitignore`: A default `.gitignore` set up to ignore Luna project build 
   artefacts.
-
-### Luna Source Files
-The true form (if you ignore whitespace) of a Luna Program is the Luna 
-Intermediate Representation (LIR). In this way, Luna just views the source files
-as a human-readable serialisation of the LIR. The fact that LIR is the 'true' 
-form of Luna leads to some interesting functionality for luna projects, where 
-they offer automatic refactoring commands. Luna Build knows about your LIR, and 
-can automate the following refactorings:
-
-- `format`: Normalises the textual Luna source to match the representation 
-  generated from the LIR. This is automatically applied to all files in `src/`
-  and `test/`, and ensures a uniform coding standard for Luna.
-- `extract [MODULE | FUNCTION | CLASS | INTERFACE]`: Extracts the 
-  specified entity to an automatically named file. It automatically performs
-  imports and renaming to keep the code working, and names the file 
-  appropriately.
-- `inline [MODULE | FUNCTION | CLASS | INTERFACE] SCOPE`: Inlines the specified
-  entity into the specified `SCOPE`. 
-- `rename ENTITY NEWNAME`: Renames the specified entity to `NEWNAME`.
-
-These refactorings can be automated from both the textual and graph editors, 
-meaning that Luna users need not think about their project structure. 
 
 ### Project Configuration
 Most project management systems enforce significant manual configuration on the
@@ -302,8 +293,9 @@ elements are automatically discovered for Luna Projects:
 - **Source Directory and Test Directory:** Luna automatically finds sources in
   `src/` and tests in `test/`.
 
-The following overrides can be placed in the `config.yaml`, and will override 
-the default behaviour where relevant.
+All of this information is cached locally to be available when a developer is 
+offline. The following overrides can be placed in the `config.yaml`, and will 
+override the default behaviour where relevant.
 
 - `synopsis`: A short, one-line description of the package.
 - `description`: Detailed package description supporting Luna doc-comment 
