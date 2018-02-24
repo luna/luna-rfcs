@@ -192,10 +192,14 @@ proposes extending the `luna` command with these following sub-commands:
 - `build`: Builds the project. What is built for a given project and how it is
   determined can be found below. As part of this, any dependencies that are not
   installed will be downloaded and installed into the global package database 
-  for you, before being linked into your project sandbox.
-- `run [FLAGS]`: Builds the application if changes have been made, and then 
-  executes the resulting executable. Has a flag `--no-build` that can be passed
-  if you do not want to update the executable with your changes. 
+  for you, before being linked into your project sandbox. The `luna build` 
+  command can also be executed on a standalone file to produce an executable in
+  the same directory.
+- `run [PATH] [FLAGS]`: Builds the application if changes have been made, and 
+  then executes the resulting executable. Has a flag `--no-build` that can be 
+  passed if you do not want to update the executable with your changes. 
+  `luna run` can also be executed on a provided file to directly interpret Luna
+  code.
 - `test`: This will run all the tests contained within the `test/` directory.
 - `clean`: This command will remove any artefacts built from the project, 
   including documentation, cached LIR and binaries. 
