@@ -192,7 +192,8 @@ There are still some unresolved (at least moreso than the above) points that req
 - How do we write the quantifiers?  
 - How do we define GADT-style dependent data types?
 
-- Wrapping and unwrapping of computations.  
+- Wrapping and unwrapping of computations.
+
 ```
 main =
     foo = @ print "hi"
@@ -211,8 +212,21 @@ main =
       `module : Type`, `class : Type` and `interface : Type` - all first-class.
       People may expect all types to be constructable though.
 
-```
+- Curried type application in imports
+- Modules not matching the filename are private. Imports into module scope are
+  exported
+- Top level imports are not exported.
+- No computations in the constraints, only in the body.
+- Parameter names only below the type signature, but the signature can refer to 
+  them (bidirectionally). Defaulting here (partial application applies all the
+  defaulted arguments, but can be accessed by name).
 
+    ```
+    mkVec : Nat -> Vector n a
+    mkVec (n = 1) = ...
+    ```
+
+```
 topLevel1 : (Num a) => a -> a
 
 topLevel2 : 
@@ -256,3 +270,16 @@ module EfficientMap k v : Map k v =
 - The modules are too tied in with syntax. I am going to postpone this work for
   now until we have the most rudimentary package system working. 
 
+```
+module TreeMap k v : Map k v =
+    fromList = ...
+
+module Node k v = 
+    left  : v
+    right : v
+    key   : k
+```
+
+
+fromList : [(key, val)] -> Map key val
+fromList lst = ...
