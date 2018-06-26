@@ -187,6 +187,7 @@ There are still some unresolved (at least moreso than the above) points that req
     + A tyvar has a given concrete type
     + A tyvar conforms to an interface
     + Equality of tyvars
+    + Type must be independent from name
 
 - How do we write the quantifiers?  
 - How do we define GADT-style dependent data types?
