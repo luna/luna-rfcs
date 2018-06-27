@@ -214,7 +214,7 @@ main =
 
 - Curried type application in imports
 - Modules not matching the filename are private. Imports into module scope are
-  exported
+  exported.
 - Top level imports are not exported.
 - No computations in the constraints, only in the body.
 - Parameter names only below the type signature, but the signature can refer to 
@@ -267,9 +267,6 @@ module EfficientMap k v : Map k v =
     EfficientMap = if expectedBuckets > threshold then HashMap else TreeMap
 ```
 
-- The modules are too tied in with syntax. I am going to postpone this work for
-  now until we have the most rudimentary package system working. 
-
 ```
 module TreeMap k v : Map k v =
     fromList = ...
@@ -280,6 +277,98 @@ module Node k v =
     key   : k
 ```
 
+- Needs some syntax for anonymous types (as they are first-class values). Do you
+  need to have the `type` keyword? Want the ability to make it multiple lined.
+  Anonymous records in types.
+
+```
+{ x : Int, y : Int, z : Int } . print
+
+foo : { x : Int, y : Int, z : Int } -> Int
+foo : (a :{ x : Int, y : Int, z : Int }) => a -> Int
+
+foo { x = 0, y = 0, z = 0 }
+foo type = 
+    x = 0
+    y = 0
+    z = 0
+```
+
+- Is this a general layout rule? How does the non-layout case parse with 
+  multiple anon types?
 
 fromList : [(key, val)] -> Map key val
 fromList lst = ...
+
+- Need to explain how this ties into Luna's type system in detail. Typing Rules
+
+- Import Syntax (explain the scoping rules for these and their combinations):
+    + `import Data.Map`: This imports `Map` into scope.
+    + `import Data.Map: fromList, empty`: This imports `Map`, `fromList` and 
+      `empty` into scope.
+    + `import Data.Containers.Map as MapInterface`: This imports `Map` into 
+      scope named `MapInterface`.
+    + `import Data.Map String`: Imports `Map` with its first type argument
+      specialised to string.
+    + `import Data.Map String as StringMap`: Imports `Map` with its first type
+      argument specialised to string and names it `StringMap`.
+    + `import Data.Map String as StringMap: fromList`: Imports `Map` named as
+      `StringMap` and `fromList` with one of its type arguments already 
+      specialised to String.
+
+- Named arguments, default arguments and semantics thereof
+- You can take either the _behaviour_ and _values_ of a type via use as an 
+  interface. If you use it as a _type_ then it determines a category.
+
+```
+# An interface for printing with a default impl.
+type (a : Textual) => PrettyPrinter a b =
+    import Utils.Show: baseShow
+
+    prettyPrint : b -> a
+    prettyPrint item = baseShow item
+
+# This type implements the PrettyPrinter interface directly. It should be noted
+# that the annotation is documentation only and could be omitted. Style says 
+# that it is a warning to omit this.
+type Point : PrettyPrinter Text Point, PrettyPrinter String Point =
+    x : int
+    y : int
+
+    prettyPrint : Point -> Text
+    prettyPrint self = ...
+
+    prettyPrint : Point -> String
+    prettyPrint self = ...
+
+# A raw type without any annotations, the compiler warns here if TestBuffer is
+# used in a context expecting PrettyPrinter even though the default impl would
+# suffice.
+type TextBuffer = 
+    encoding : Encoding
+
+    # Buf is a heterogenous list
+    buf : [Size, CWord8..] 
+
+    printBuf : TextBuffer -> Text
+
+# This function expects printable things, so both TextBuffer and Point work.
+someLogFn : (a : PrettyPrinter b) => String -> a -> Text
+someLogFn msg thing = msg <> prettyPrint @Text thing
+
+# This function requires anything with two ints as its value domain
+someValFunction : { Int, Int } -> Int
+someValFunction { x, y } = x + y
+
+# Example Calls of someValFunction. Both are valid.
+someValFunction { 0, 0 }
+someValFunction (Point 0 0)
+
+# This function is restricted to the category of Point, which includes values
+# and behaviour.
+dot : Point -> Point -> Int
+dot p1{x1, y1} p2{x2, y2} = x1 * x2 + y1 * y2 
+```
+
+- How do we deal with extension methods?
+- Unification of Lists and Tuples as part of syntax RFC.
