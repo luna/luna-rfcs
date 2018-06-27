@@ -284,8 +284,14 @@ module Node k v =
 ```
 { x : Int, y : Int, z : Int } . print
 
+# These get progressively more specific
+foo : { Int, Int, Int } -> Int
 foo : { x : Int, y : Int, z : Int } -> Int
-foo : (a :{ x : Int, y : Int, z : Int }) => a -> Int
+
+# You can also provide function signatures as part of the anon type
+# Self is a special identifier.
+foo : { Int, Int, Self -> Int } -> Int
+foo rec{x, y, fn} = fn rec
 
 foo { x = 0, y = 0, z = 0 }
 foo type = 
@@ -320,13 +326,21 @@ fromList lst = ...
 - You can take either the _behaviour_ and _values_ of a type via use as an 
   interface. If you use it as a _type_ then it determines a category.
 
+PrettyPrinter.luna
+
 ```
+import Utils.Show: baseShow
+
 # An interface for printing with a default impl.
 type (a : Textual) => PrettyPrinter a b =
-    import Utils.Show: baseShow
-
     prettyPrint : b -> a
     prettyPrint item = baseShow item
+```
+
+Point.luna
+
+```
+import Util.PrettyPrinter
 
 # This type implements the PrettyPrinter interface directly. It should be noted
 # that the annotation is documentation only and could be omitted. Style says 
@@ -365,7 +379,7 @@ someValFunction { 0, 0 }
 someValFunction (Point 0 0)
 
 # This function is restricted to the category of Point, which includes values
-# and behaviour.
+# and behaviour, so `dot {1, 1} {2, 2}` is not valid.
 dot : Point -> Point -> Int
 dot p1{x1, y1} p2{x2, y2} = x1 * x2 + y1 * y2 
 ```
