@@ -448,4 +448,41 @@ type Int =
 - If you truly want to represent constructors as values, then all constructors
   should obey the same principle. Constructors describe values and, like any 
   function, should be able to constrain the sets of values they represent.
-- Do the type's constructors come into scope on import? Yes, probably.
+- Do the type's constructors come into scope on import? No, probably, as this
+  causes conflicts.
+- Instead, for a `type Vector a = { x y z : a }`, we get `Vector a` in scope and
+  an alias `vector == Vector.Vector` so all constructors are lower case. 
+  However, this introduces issues with pattern-matching on zero-argument
+  constructors. We could also make constructors lowercase in this case. 
+- We could just require parentheses around all patterns.
+- How does this work with pattern matching on groups?
+
+1. We can define types like this:
+
+   >> type Vector a =
+   >>     x y z :: a
+
+
+2. Value level syntax = type level syntax, so the following is correct:
+
+   >> v = Vector.Vector 1 2 3 :: Vector.Vector 1 2 3
+   >> v = Vector.Vector 1 2 3 :: Vector.Vector Int Int Int
+   >> v = Vector.Vector 1 2 3 :: Vector Int
+   >> foo :: Vector Int -> Int
+   >> foo :: Vector.Vector 1 2 3 -> Int
+   >> foo :: Vector.Vector Int Int Int -> Int
+
+
+3. If (2) is correct then we've got a type `Vector.Vector` and we can use it
+   everywhere other types are usable. In particular I can use it like
+
+   >> type Foo = Vector.Vector Int Int Int 
+
+   So I can also use it this way:
+   
+   >> type Foo a b = Vector.Vector a b a
+   
+   
+4. If (3) is correct, then there is a type `Vector.Vector` which behaves in a
+   very specific way - you can pass types as its values. It IS a constructor
+   but instead of concrete values you pass "group names" (like `Int`). 
