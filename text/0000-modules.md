@@ -234,6 +234,9 @@ type (a : Coercible b) => Convert a b =
     convert : a -> b
 ```
 
+It may seem odd at first glance to be considering a _module_ without an 
+implementation, but this is just an interface contained in its own scope!
+
 ### Types As Interfaces
 A type in Luna can also act as a 'contract', a specification of the behaviour 
 expected of a type. The use of types as interfaces in Luna is, as you might 
@@ -243,7 +246,8 @@ where a type `Foo` implementing `Bar` can be used where a `Bar` is expected.
 
 Interfaces in Luna can range from general to very specific. As they define a 
 _category_ of values, interfaces can specify anything from function signatures
-that must be present, all the way to names that must be present in the type's scope and default behaviour. The following are all valid ways to define types
+that must be present, all the way to names that must be present in the type's 
+scope and default behaviour. The following are all valid ways to define types
 for use as interfaces in Luna.
 
 ```
