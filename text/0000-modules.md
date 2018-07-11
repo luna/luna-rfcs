@@ -205,8 +205,9 @@ an instance of the `Textual` interface.
 
 Another useful extension of this is that type arguments to generic types can be
 partially applied via currying. If, for example, we have a `Map k v`, we can 
-produce a `StringMap v = Map String v` just by applying one of the type 
-arguments. 
+produce a `StringMap = Map String` just by applying one of the type 
+arguments. This is equivalent to explicit specification of the free type 
+variable: `StringMap v = Map String v`.
 
 ### Types As Modules
 The same notion of a type can be used to provide the functionality that is
