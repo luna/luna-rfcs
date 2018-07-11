@@ -228,7 +228,7 @@ is imported simply as `import Convert` (see
 accessible within the scope of `Convert` (e.g. `Convert.convert`). 
 
 ```
-type (a : Coercible b) Convert a b =
+type (a : Coercible b) => Convert a b =
     id : a -> a
     convert : a -> b
 ```
