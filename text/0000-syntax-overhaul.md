@@ -69,6 +69,11 @@ foo bar baz dlugie rozne argumenty
 
 ----------------------
 
+Currently we have no specification for the function and form of extension 
+methods.
+
+-------------------
+
 what is the difference between just types and types - modules ? 
 types mean set of constructors and they are also interfaces that their elements
 have to match, so:
