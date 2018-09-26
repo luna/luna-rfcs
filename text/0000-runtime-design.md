@@ -155,6 +155,8 @@ well as interactive use in a future Luna REPL.
 - Dirty flag propagation and invalidation, but with saving of parameters.
 - It is possible that the method cache and the value cache can be one and the
   same.
+- The ideas presented by [skip](http://skiplang.com/) may have some very useful
+  implications for the runtime caching mechanism. 
 
 #### Graph Reduction
 
