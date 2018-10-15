@@ -156,7 +156,7 @@ well as interactive use in a future Luna REPL.
 - It is possible that the method cache and the value cache can be one and the
   same.
 - The ideas presented by [skip](http://skiplang.com/) may have some very useful
-  implications for the runtime caching mechanism. 
+  implications for the runtime caching mechanism.
 
 #### Graph Reduction
 
@@ -169,6 +169,16 @@ well as interactive use in a future Luna REPL.
   new patterns) is an important point of this design.
 - Reduction may elide useful things (e.g. sliders), so could be disabled or
   (hot-pathed).
+
+#### Separate Compilation
+
+- It should be possible to compile separate parts of the IR to separate
+  languages as part of the JIT architecture.
+- This would allow hybrid compilation to support web use-cases. An example of
+  this is that the currently editable view could compile to JavaScript to be
+  executed live on the client, with compiled code executing on the server.
+- This has some complex interactions around data transfer and an object model,
+  however.
 
 ## Parallelism
 As part of its usage in Luna Studio, Luna wants to offer the ability for
