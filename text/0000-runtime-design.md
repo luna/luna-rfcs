@@ -136,6 +136,9 @@ well as interactive use in a future Luna REPL.
   complexity. It may be sensible to use a C-level data model, as this would
   potentially provide better interop with other languages and compilation
   stages.
+- The runtime should support both PGO and manual optimisation. It should also be
+  possible to mark a function as `NeverOptimise` such that PGO does not kick in
+  if the function is in a live layer.
 
 #### Caching
 
@@ -179,6 +182,18 @@ well as interactive use in a future Luna REPL.
   executed live on the client, with compiled code executing on the server.
 - This has some complex interactions around data transfer and an object model,
   however.
+  
+#### Measurement
+
+- Luna, as a language, should be trivially easy to profile, both when it comes
+  to memory and runtime (clock and CPU time). 
+- Easy inbuilt profiling will both allow visual profiling in Luna Studio, and 
+  the command-line generation of reports (or live files).
+- The new runtime must incorporate hooks for gathering this profiling info, so
+  it can easily be displayed to users.
+- This profiling support should _not_ instroduce a negative performance impact.
+- It is likely, if based on a JIT, that the PGO infrastructure should be able
+  to be utilised for this profiling information.
 
 ## Parallelism
 As part of its usage in Luna Studio, Luna wants to offer the ability for
