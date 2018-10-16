@@ -180,6 +180,13 @@ well as interactive use in a future Luna REPL.
 - This has some complex interactions around data transfer and an object model,
   however.
 
+#### Static Analysis and Graph Compilation
+
+- To increase the 'warm up' speed of a JIT, it is possible that static tracing
+  through the Luna graph can be used to augment dynamic JIT tracing.
+- Such static tracing would give _some_ idea of what code paths to optimise in
+  absence of dynamic tracing information, potentially reducing JIT warm-up.
+
 ## Parallelism
 As part of its usage in Luna Studio, Luna wants to offer the ability for
 automatic parallelism of certain function calls. Furthermore, its use as a
@@ -258,6 +265,19 @@ too.
   [Dependent Haskell](https://ghc.haskell.org/trac/ghc/wiki/DependentHaskell)
   in GHC.
 
+#### Type Erasure
+
+- While execution of type-erased code at runtime is often seen as necessary for
+  the execution performance of code, this often brings limitations in situations
+  where RTTI would be useful.
+- Luna, with such a rich type language, has the capacity to benefit in a
+  significant way from the availability of RTTI, so we don't want to erase Luna
+  fully.
+- A JIT, however, would provide a solution to this: as it optimises functions it
+  can specialise and type-erase them for performance. The un- or less-optimised
+  versions of these functions are still available in cases where the optimised
+  code needs to be invalidated.
+
 ## ESA
 Future plans for Luna also include embedding other languages within Luna code to
 allow for seamless interoperability with said languages. Designing this
@@ -286,6 +306,21 @@ optional laziness) in the future.
 - It should have well-defined evaluation strategies for both lazy and strict
   code (e.g. call-by-need for lazy code, call-by-name for strict code).
 - The interpreter's design needs to be agnostic to the evaluation strategy.
+- Strict by default with rich support for laziness.
+- Data should be able to be 'switched' into a lazy mode, with support for both
+  deep and shallow laziness.
+- Shallow is lazy fields.
+- Deep is lazy type, lazy fields / methods
+- Types can be lazy by default.
+- Every piece of data needs strictness annotations in its metadata (in addition
+  to Monad, Error, Type, etc).
+
+#### A Skeleton Design for Runtime Laziness Handling
+
+- Every runtime value will be tagged (as part of its metadata blob, along with
+  type, monad, error, etc).
+- This acts as a key to tell the evaluator how to execute the code in question,
+  and whether code generation needs to generate code for thunks.
 
 ## FFI
 Luna's FFI currently only supports calling C ABI functions via the use of
