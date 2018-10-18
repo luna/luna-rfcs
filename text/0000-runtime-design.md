@@ -329,6 +329,8 @@ optional laziness) in the future.
 - Types can be lazy by default.
 - Every piece of data needs strictness annotations in its metadata (in addition
   to Monad, Error, Type, etc).
+- Having flexible support for laziness and strictness means it is triviail to 
+  implement short-circuiting operations _inside_ Luna. 
 
 #### A Skeleton Design for Runtime Laziness Handling
 
