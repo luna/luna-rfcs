@@ -331,6 +331,8 @@ optional laziness) in the future.
   to Monad, Error, Type, etc).
 - Having flexible support for laziness and strictness means it is triviail to 
   implement short-circuiting operations _inside_ Luna. 
+- For optimisation's sake, we may actually be able to generate call-by-need
+  based strict evaluation, eagerly replacing thunks at evaluation time. 
 
 #### A Skeleton Design for Runtime Laziness Handling
 
