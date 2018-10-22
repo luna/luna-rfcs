@@ -225,6 +225,10 @@ The runtime needs to support both of these use-cases.
   as well as a lightweight green-threading solution.
 - Automatic splitting at branches in pure cases or cases with provably separate
   evaluations. This should be a graph-level annotation set by a pass.
+- This parallelism should automatically extend to execution on non SMP systems.
+  That means both NUMA systems and GPU-based compute. This is not a suggestion
+  that Luna itself can execute on GPUs, but there should be native support in
+  the RTS for efficiency in Data Science analysis use-cases. 
 
 #### Design Considerations for Dealing with Parallelism
 
@@ -329,6 +333,10 @@ optional laziness) in the future.
 - Types can be lazy by default.
 - Every piece of data needs strictness annotations in its metadata (in addition
   to Monad, Error, Type, etc).
+- Having flexible support for laziness and strictness means it is triviail to 
+  implement short-circuiting operations _inside_ Luna. 
+- For optimisation's sake, we may actually be able to generate call-by-need
+  based strict evaluation, eagerly replacing thunks at evaluation time. 
 
 #### A Skeleton Design for Runtime Laziness Handling
 
