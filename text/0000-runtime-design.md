@@ -182,12 +182,12 @@ well as interactive use in a future Luna REPL.
   executed live on the client, with compiled code executing on the server.
 - This has some complex interactions around data transfer and an object model,
   however.
-  
+
 #### Measurement
 
 - Luna, as a language, should be trivially easy to profile, both when it comes
-  to memory and runtime (clock and CPU time). 
-- Easy inbuilt profiling will both allow visual profiling in Luna Studio, and 
+  to memory and runtime (clock and CPU time).
+- Easy inbuilt profiling will both allow visual profiling in Luna Studio, and
   the command-line generation of reports (or live files).
 - The new runtime must incorporate hooks for gathering this profiling info, so
   it can easily be displayed to users.
@@ -350,4 +350,236 @@ better fashion, and potentially extend this to different languages.
 - This flexibility should extend to the interpreted runtime.
 - FFI calls should be as close to zero-overhead in the dynamic runtime as
   possible, while in compiled code they should be zero-cost.
+
+## A JIT-Based Luna Runtime
+The following section aims to explain why integration of a JIT Compiler into the
+Luna runtime helps to accommodate many of the features described in the notes
+above. It also aims to explain why using a JIT is not _just_ a benefit for the
+Runtime and its featureset, but also for the Luna ecosystem as a whole.
+
+### Why a JIT?
+
+### How a JIT Solves Specific Issues
+
+### Additional Benefits of a JIT
+
+
+## An Analysis of JIT Architecture Options
+There are multiple options that are worth exploring when it comes to the
+integration of a JIT compiler into Luna's runtime. This section aims to record
+the detailed research performed into each of these options such that a concrete
+recommendation for moving forward can be made.
+
+### GHC
+GHC is not only the most sophisticated Haskell compiler in existence today, but
+it is also a test-bed for ideas that explore the evolution of functional
+languages. It would be brilliant to leverage the years of accrued knowledge in
+the optimisation of functional language that GHC embodies.
+
+The majority of GHC's optimisations are contained within the Core-to-core
+pipeline, that uses self-contained transformations that transform expressions
+within the core language. Luna would be able to utilise this pipeline by
+treating GHC Core as a compilation target, and running the resultant code
+through the rest of the GHC code-generation pipeline.
+
+### Feasibility
+As a platform, GHC has seen over twenty years of continuous improvement and is
+at the forefront of functional language research in both performance and
+type-systems. As a potential compilation target for the Luna Runtime JIT, it is
+able to provide a rich featureset that would ease the implementation burden
+significantly.
+
+The key element of this featureset is GHC's Core language. Core is a rich but
+highly explicit language that has support for explicit coercions and type/kind
+equalities, a must for a dependently-typed language. The ability to express much
+of Luna's type-level machinery in GHC core is a huge boon, removing the need to
+explicitly implement significant portions of Luna's types for compilation.
+
+However, all is not sunshine and roses, with a choice for GHC meaning that Luna
+is forever tied to it. This includes not just the positives, but also the
+negative aspects of GHC such as its poor garbage collection.
+
+Nevertheless, GHC is a compelling option for incorporation into Luna's runtime
+JIT, providing an excellent compilation target. In addition, the benefits of GHC
+being an open system means that Luna can improve the platform that it compiles
+to, and hence bring benefits to the entire Haskell ecosystem.
+
+### GHC as a JIT
+While GHC's core language has always been intended as a feasible compilation
+target for other functional programming languages, there is currently no support
+for use of GHC in a JIT-based architecture.
+
+However, this does not mean that it is not feasible, as the compiler provides a
+featured API for controlling its behaviour (see [The GHC API](#the-ghc-api)).
+This means that Luna would be able to hook into the functionality of GHC that it
+requires, up to and including explicit control over all the details of
+compilation.
+
+Initial research into using GHC in this way indicates that the JIT phases would
+likely operate approximately as follows:
+
+- **Tier 1:** Direct interpretation of Luna IR
+- **Tier 2:** Luna IR -> GHC Core -> STG -> Native Code -> Load into JIT
+- **Tier 3:** Luna IR -> IR Opt (Fast) -> GHC Core -> Core Opt (Fast) -> STG
+  Native Code -> Load into JIT
+- **Additional Tiers:** These would operate as for Tier 3, but would apply
+  successively more expensive optimisations as they become worthwhile.
+
+It should be noted however that, unlike both LLVM (with ORC) and GraalVM, GHC
+has no native support for operation as a JIT. This means that much of the work
+for this approach would revolve around building a JIT around GHC. This would
+require (but isn't limited to):
+
+- Tools for tracing analysis to know what to optimise.
+- Tools for manual optimisation and deoptimisation of code.
+- Tools for static tracing of Luna's IR graphcs.
+- Tools for dynamic hot-swapping of compiled and interpreted code.
+
+Furthermore, such an approach would require the availability of GHC as part of
+the Luna binary distribution. This would lead to a not-insignificant increase in
+the size of the Luna binary.
+
+#### Compiler Performance
+GHC is known for suboptimal compilation times for Haskell programs that utilise
+sophisticated pieces of the typelevel machinery. Howver, most of this slowdown
+is attributed to the renamer and typechecker, rather than the core pipeline.
+
+Core's type language is significantly simpler, with far more left explicit. This
+means that as long as Luna generates sensible core (e.g. not generating an
+obscene number of [coercions](https://ghc.haskell.org/trac/ghc/ticket/8095)), it
+is likely to be feasible to use GHC as part of a JIT pipeline.
+
+It is somewhat complicated to measure, and more time needs to be spent on it,
+but initial tests show that much of the time is spent in both typechecking and
+the optimisation of highly suboptimal core expressions.
+
+#### The Optimisation Pipeline (Core2Core)
+The majority of GHC's optimisation work takes place in the Core2Core pipeline.
+This is a set of fully independent passes that transform core expressions to
+other core expressions, very similarly to how Luna's graph transformation passes
+operate.
+
+The main benefits of using GHC are thus twofold:
+
+1. We can trivially build new optimisations for core that work as part of the
+   existing optimisation pipeline.
+2. Standard optimisations for imperative programs (such as those employed by
+   LLVM or GraalVM) are often significantly less effective when applied to
+   functional code, as discussed in the [GRIN paper](https://github.com/sdiehl/papers/blob/master/Grin.pdf).
+   Functional languages rely more on whole-program optimisation for their
+   performance, and so compilers built with imperative languages in mind may not
+   be a good fit. GHC gives us suitable optimisations for free, where using
+   LLVM or GraalVM would require us to desugar Luna to an imperative form (such
+   as Cmm that GHC uses) ourselves.
+
+This does not mean that we get _everything_ for free from GHC, however. Certain
+optimisations are still made on the source language, which we would be free to
+experiment with in the Luna frontend IR -> IR transformation pipeline before
+generation of core.
+
+#### GHC Core as a Compilation Target
+Core is an explicitly-typed but simple language that serves as a real-world
+implementation of [System-FC](https://ghc.haskell.org/trac/ghc/wiki/Commentary/Compiler/FC)
+(more info [here](|https://www.seas.upenn.edu/~sweirich/papers/fckinds.pdf)). It
+comes with a rich specification of both its syntax and informal semantics, and
+this is kept up to date in the [Core Spec](https://git.haskell.org/ghc.git/blob/HEAD:/docs/core-spec/core-spec.pdf).
+
+This language, as currently implemented in GHC, supports many useful features
+such as:
+
+- Explicit type and kind equalities (necessary for efficient implementation of
+  dependent types).
+- A simple expression format that can be machine-generated using the GHC API (as
+  a [`CoreSynType`](https://ghc.haskell.org/trac/ghc/wiki/Commentary/Compiler/CoreSynType)
+  representation of the Luna IR).
+- Rich support for modelling types and coercions, meaning that 95% of Luna's
+  metatheory can be supported in it. That which cannot be can likely be
+  implemented as direct logic, much as Idris does.
+- Rich support for both strictness and laziness, as well as boxed and unboxed
+  types. Care needs to be taken to generate the correct core from Luna IR in
+  order to ensure semantic correctness around this.
+
+While Core is a rich target language, however, the documentation on using GHC in
+such a way is lacking compared to both GraalVM and LLVM. This may increase the
+rate of mistakes in implementation, and hence the work required, but this
+research makes evident that using GHC would be worthwhile if this route is the
+one taken.
+
+Core is translated to STG (Spineless Tagless G-Machine), which is an efficient
+model of functional language execution. This means that Luna can build on the
+work done on this, utilising an eval/apply style of evaluation model, as
+described in [Making a Fast Curry](https://github.com/sdiehl/papers/blob/master/Making_A_Fast_Curry.pdf).
+
+#### The GHC Runtime System
+In addition to being a fantastic compilation target for functional languages,
+GHC is accompanied by a rich runtime system (RTS). This RTS has support for both
+native concurrency and multithreaded IO, making it a brilliant potential target
+for Luna.
+
+Using GHC as a compilation target would allow us to make use of the GHC RTS for
+Luna's execution. As a result, a significant featureset is acquired for 'free',
+instead of requiring implementation by us. Furthermore, building on top of GHC
+would give us great usability features such as DWARF information, and the whole
+suite of GHC's profiling tools.
+
+Furthermore, Luna is built in Haskell, meaning that loading GHC-generated code
+for use by the JIT is able to be trivially handled in this case via
+[`System.Plugins.Load`](https://hackage.haskell.org/package/plugins-1.5.5.0/docs/System-Plugins-Load.html)
+in conjunction with `loadFunction`.
+As long as we are content that Luna will always be built in Haskell, then the
+ability to trivially share code between JIT'ed and interpreted components all in
+the same runtime is a huge boon.
+
+While the GHC RTS is inherently garbage collected, it has facilities for direct
+allocation and deallocation. This means that in the future it is likely possible
+to implement optimisations around evaluation and memory usage predicated on the
+availability of unique, linear or affine types in Luna.
+
+### The GHC API
+GHC provides a rich programmatic interface to GHC itself, allowing Luna to have
+detailed control over the compilation process. The [GHC API](https://hackage.haskell.org/package/ghc)
+provides the facilities for comprehensive control over GHC, as well as analysis
+based on what GHC is capable of.
+
+### Interaction with the FFI
+In interpreted code, Luna is forced to dynamically load libraries and symbols
+for executing FFI calls using the system dynamic linker (and libffi). Using a
+JIT, however, means that this can be greatly improved.
+
+GHC's Runtime System has rich support for making FFI calls, so Luna's call speed
+could be dramatically improved in JIT-compiled code by generating static native
+calls where possible.
+
+### Negatives to Using GHC
+While the above constitutes a very good set of reasons to take this approach to
+building a JIT for Luna's runtime, it is not without downsides. The ones that I
+see as most important when making this decision are as follows:
+
+- It would perenially tie the implementation of Luna to Haskell and, morover, to
+  GHC itself. This would preclude making Luna a self-hosting language in future,
+  or at least preclude doing it without significant rewrites.
+- GHC's native targets are limited when compared to something like LLVM.
+- GHC's support for platform-specific extensions is limited compared to the rich
+  featureset that LLVM offers in this area.
+- GHC's garbage collector is not really at the forefront of garbage collectors.
+  There are other, more sophisticated, approaches to garbage collection that may
+  have benefits for the kinds of workloads that Luna aims to tackle going
+  forward.
+- While Core is intended as as platform for functional languages, certain of the
+  in-development initiatives are explicitly targeted at Haskell. An example of
+  this is the [Lightweight Concurrency](https://ghc.haskell.org/trac/ghc/wiki/LightweightConcurrency)
+  project, which would remove features from the RTS and move them into the
+  source language (Haskell) instead. Such initiatives would add work for us as
+  Luna's implementors.
+
+### Resources
+For more information about GHC and how it could be used as part of a JIT
+compiler pipeline, please see the links below:
+
+- [GHC Manual](https://downloads.haskell.org/~ghc/latest/docs/html/users_guide/)
+- [GHC API](https://hackage.haskell.org/package/ghc)
+- [GHC Design Commentary](https://ghc.haskell.org/trac/ghc/wiki/Commentary)
+- [GHC Core-to-Core Passes](https://www.microsoft.com/en-us/research/wp-content/uploads/1998/09/comp-by-trans-scp.pdf)
+- [GHC Reading List](https://ghc.haskell.org/trac/ghc/wiki/ReadingList)
+- [Core Spec](https://git.haskell.org/ghc.git/blob/HEAD:/docs/core-spec/core-spec.pdf)
 
