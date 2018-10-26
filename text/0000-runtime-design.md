@@ -228,7 +228,7 @@ The runtime needs to support both of these use-cases.
 - This parallelism should automatically extend to execution on non SMP systems.
   That means both NUMA systems and GPU-based compute. This is not a suggestion
   that Luna itself can execute on GPUs, but there should be native support in
-  the RTS for efficiency in Data Science analysis use-cases. 
+  the RTS for efficiency in Data Science analysis use-cases.
 
 #### Design Considerations for Dealing with Parallelism
 
@@ -333,10 +333,10 @@ optional laziness) in the future.
 - Types can be lazy by default.
 - Every piece of data needs strictness annotations in its metadata (in addition
   to Monad, Error, Type, etc).
-- Having flexible support for laziness and strictness means it is triviail to 
-  implement short-circuiting operations _inside_ Luna. 
+- Having flexible support for laziness and strictness means it is triviail to
+  implement short-circuiting operations _inside_ Luna.
 - For optimisation's sake, we may actually be able to generate call-by-need
-  based strict evaluation, eagerly replacing thunks at evaluation time. 
+  based strict evaluation, eagerly replacing thunks at evaluation time.
 
 #### A Skeleton Design for Runtime Laziness Handling
 
@@ -390,7 +390,7 @@ within the core language. Luna would be able to utilise this pipeline by
 treating GHC Core as a compilation target, and running the resultant code
 through the rest of the GHC code-generation pipeline.
 
-### Feasibility
+#### Feasibility
 As a platform, GHC has seen over twenty years of continuous improvement and is
 at the forefront of functional language research in both performance and
 type-systems. As a potential compilation target for the Luna Runtime JIT, it is
@@ -412,7 +412,7 @@ JIT, providing an excellent compilation target. In addition, the benefits of GHC
 being an open system means that Luna can improve the platform that it compiles
 to, and hence bring benefits to the entire Haskell ecosystem.
 
-### GHC as a JIT
+#### GHC as a JIT
 While GHC's core language has always been intended as a feasible compilation
 target for other functional programming languages, there is currently no support
 for use of GHC in a JIT-based architecture.
@@ -447,7 +447,7 @@ Furthermore, such an approach would require the availability of GHC as part of
 the Luna binary distribution. This would lead to a not-insignificant increase in
 the size of the Luna binary.
 
-#### Compiler Performance
+##### Compiler Performance
 GHC is known for suboptimal compilation times for Haskell programs that utilise
 sophisticated pieces of the typelevel machinery. Howver, most of this slowdown
 is attributed to the renamer and typechecker, rather than the core pipeline.
@@ -461,7 +461,7 @@ It is somewhat complicated to measure, and more time needs to be spent on it,
 but initial tests show that much of the time is spent in both typechecking and
 the optimisation of highly suboptimal core expressions.
 
-#### The Optimisation Pipeline (Core2Core)
+##### The Optimisation Pipeline (Core2Core)
 The majority of GHC's optimisation work takes place in the Core2Core pipeline.
 This is a set of fully independent passes that transform core expressions to
 other core expressions, very similarly to how Luna's graph transformation passes
@@ -485,7 +485,7 @@ optimisations are still made on the source language, which we would be free to
 experiment with in the Luna frontend IR -> IR transformation pipeline before
 generation of core.
 
-#### GHC Core as a Compilation Target
+##### GHC Core as a Compilation Target
 Core is an explicitly-typed but simple language that serves as a real-world
 implementation of [System-FC](https://ghc.haskell.org/trac/ghc/wiki/Commentary/Compiler/FC)
 (more info [here](|https://www.seas.upenn.edu/~sweirich/papers/fckinds.pdf)). It
@@ -518,7 +518,7 @@ model of functional language execution. This means that Luna can build on the
 work done on this, utilising an eval/apply style of evaluation model, as
 described in [Making a Fast Curry](https://github.com/sdiehl/papers/blob/master/Making_A_Fast_Curry.pdf).
 
-#### The GHC Runtime System
+##### The GHC Runtime System
 In addition to being a fantastic compilation target for functional languages,
 GHC is accompanied by a rich runtime system (RTS). This RTS has support for both
 native concurrency and multithreaded IO, making it a brilliant potential target
@@ -543,13 +543,13 @@ allocation and deallocation. This means that in the future it is likely possible
 to implement optimisations around evaluation and memory usage predicated on the
 availability of unique, linear or affine types in Luna.
 
-### The GHC API
+#### The GHC API
 GHC provides a rich programmatic interface to GHC itself, allowing Luna to have
 detailed control over the compilation process. The [GHC API](https://hackage.haskell.org/package/ghc)
 provides the facilities for comprehensive control over GHC, as well as analysis
 based on what GHC is capable of.
 
-### Interaction with the FFI
+#### Interaction with the FFI
 In interpreted code, Luna is forced to dynamically load libraries and symbols
 for executing FFI calls using the system dynamic linker (and libffi). Using a
 JIT, however, means that this can be greatly improved.
@@ -558,7 +558,7 @@ GHC's Runtime System has rich support for making FFI calls, so Luna's call speed
 could be dramatically improved in JIT-compiled code by generating static native
 calls where possible.
 
-### Negatives to Using GHC
+#### Negatives to Using GHC
 While the above constitutes a very good set of reasons to take this approach to
 building a JIT for Luna's runtime, it is not without downsides. The ones that I
 see as most important when making this decision are as follows:
@@ -580,7 +580,7 @@ see as most important when making this decision are as follows:
   source language (Haskell) instead. Such initiatives would add work for us as
   Luna's implementors.
 
-### Resources
+#### Resources
 For more information about GHC and how it could be used as part of a JIT
 compiler pipeline, please see the links below:
 
@@ -590,4 +590,135 @@ compiler pipeline, please see the links below:
 - [GHC Core-to-Core Passes](https://www.microsoft.com/en-us/research/wp-content/uploads/1998/09/comp-by-trans-scp.pdf)
 - [GHC Reading List](https://ghc.haskell.org/trac/ghc/wiki/ReadingList)
 - [Core Spec](https://git.haskell.org/ghc.git/blob/HEAD:/docs/core-spec/core-spec.pdf)
+
+### GraalVM
+GraalVM is a new initiative developed by Oracle Labs that aims to provide a
+high-performance polyglot language runtime. It consists of a universal virtual
+machine and toolkit for seamless interoperability between programming languages.
+
+Basing Luna's runtime and execution on GraalVM would reduce implementation
+burden through use of the Truffle toolkit. This allows a single implementation
+of language semantics and the language runtime, from which a high-performance
+JIT and interpreter can be derived using partial-evaluation optimisation
+strategies.
+
+#### Feasibility
+GraalVM is an innovative piece of software, allowing for easy language
+development and interoperability between languages. However, for our use-case,
+it is stymied by a lack of control over the JIT itself, and lack of true support
+for functional paradigms that make it not an amazing fit for the development of
+Luna's runtime.
+
+#### Building a Runtime JIT using GraalVM
+Rather than building GraalVM _into_ a JIT as part of Luna's runtime, use of the
+Graal platform would instead constitute the entire Luna RTS.
+
+The Truffle language development framework, included as part of Graal provides
+the implementor with tools for creating a language interpreter and matching
+runtime. The Graal compiler is then able to use a partial-evaluation approach
+to derivie [high-performance code](https://chrisseaton.com/rubytruffle/pldi17-truffle/pldi17-truffle.pdf)
+from the simple interpreter. In doing so, the language implementor is able to
+provide only a _single_ implementation of the language's semantics and runtime,
+rather than a traditional approach where interpreter and compiler are forced to
+both implement the semantics themselves. These Truffle interpreters are aware of
+the partial-evaluation optimisations that can be made, and hence make this
+optimisation problem tractable.
+
+In addition, GraalVM has rich support for both debugging and profiling. Users
+are able to build their own introspection tools for the platform, and this
+functionality would be a boon when it comes to the profiling requirements placed
+on the Luna runtime.
+
+However, Truffle (and hence Graal) are targeted primarily at imperative
+languages, providing a less-than-ideal set of tools for the implementation of
+functional languages. This includes a lack of support for both functional
+paradigms and sophisticated type-system features, and so it may be difficult to
+shoehorn Luna's semantics into it.
+
+In addition, Luna's JIT has some specific requirements placed on it, especially
+around both manual control over optimisation and value caching. These are,
+unfortunately, not supported by Graal:
+
+- Caching of values and traces is not something built into the Graal JIT. It is
+  very likely that attempting to retrofit this would take significant work, and
+  require the team to maintain a fork of Graal itself.
+- While there is functionality for manually triggering deoptimisation of Graal
+  code (`CompilerDirectives.transferToInterpreterAndInvalidate()`), there is no
+  functionality for the converse. This means that if Graal is used there will be
+  no way to manually trigger optimisation of a specific piece of Luna code.
+
+#### GraalVM and Language Interop
+Probably the _key_ advantage to using Graal would be the Polyglot features that
+it provides. The [Polyglot SDK](http://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/package-summary.html)
+provides functionality for zero-copy sharing of data between languages executing
+on the same GraalVM instance. These languages include JavaScript, R and LLVM
+bitcode, as well as an experimental implementation of Python 3.7. This Polyglot
+API allows for native evaluation of foreign language code via the
+`Polyglot.eval` command.
+
+Polyglot Graal uses a Java-style datamodel and standardised interoperability
+protocol that describes the functionality that each language needs to provide to
+operate on common data. More details can be found in this [paper](https://chrisseaton.com/truffleruby/dls15-interop/dls15-interop.pdf).
+
+#### GraalVM and Performance
+Unlike standard tracing-based JITs or language compilers (see [PyPy](https://pypy.org/)),
+GraalVM uses a partial-evaluation based approach to performance. This means that
+it relies less on traditional imperative-language optimisations that would not
+apply to Luna as a functional language. Some notes:
+
+- Graal's optimisations are applicable to both dynamic and static languages.
+  However, the latter will suffer from longer warmup times as there is less
+  'semantic cruft' to prune through partial evaluation.
+- Graal's startup time is guaranteed to be slower than a hand-tooled runtime for
+  a language, but can offer comparable speed once warmed up.
+- Graal has a well-specified machine and memory model, with support for
+  automatic memory management, concurrency and synchronisation primitives.
+- It is able to perform the following optimisations on high-level languages:
+  - Complex cross-module inlining.
+  - Aggressive speculative optimisation.
+  - Escape analysis for elimintation of spurious object allocations.
+
+The optimisation process for languages implemented using Truffle and running on
+the Graal platform is as follows:
+
+1. The interpreter collects information on the subset of the implemented
+   language semantics that are _actually_ being used at runtime. This includes
+   both profiling and type information, and is used to perform specialisation.
+2. Partial evaluation is applied to this specialised interpreter to derive
+   compiled code that is faster.
+3. If speculation is too specific, it fails back to the interpreter and this
+   information is used to alter the specialisation (usually by generalising it).
+4. This process repeats until a threshold of sufficient generality is reached.
+
+#### Negatives to using GraalVM
+Much like GHC, GraalVM offers a compelling solution for implementation of Luna's
+RTS. However, it is not without its negatives:
+
+- GraalVM is currently only in preview release for Windows platforms, one of the
+  core platforms for Luna. There is no timeframe for Windows stabilistation.
+- While Graal has had its 1.0 release, it is still under heavy development and
+  is resultantly quite buggy. Along the same lines, the Polyglot interop
+  protocol is somewhat limited, and may not support all of the functionality
+  required to operate seamlessly with Luna at a high level.
+- GraalVM operates under two licenses. The community edition is free for use in
+  production, but misses out on some of the performance of the enterprise
+  edition.
+- Working with Graal requires writing Java and the team has limited experience
+  with the language.
+- Unlike both LLVM and GHC-based approaches, using GraalVM offers no pathway to
+  a native compilation target for Luna. While the platform includes SubstrateVM,
+  a sophisticated static-tracing compiler that does code reachability analysis,
+  this only works on _Java_ code. While we could thus provide a statically
+  compiled binary of the Luna Runtime, there is no path to static Luna binaries
+  themselves.
+
+#### Resources
+For more information about GraalVM and how it could be used for implementing the
+RTS for Luna, see the following links:
+
+- [GraalVM Website](https://www.graalvm.org/)
+- [GraalVM Documentation](https://www.graalvm.org/docs/)
+- [GraalVM API Documentation](http://www.graalvm.org/sdk/javadoc/)
+- [Partial Evaluation and Truffle](https://chrisseaton.com/rubytruffle/pldi17-truffle/pldi17-truffle.pdf)
+- [Language Interoperability](https://chrisseaton.com/truffleruby/dls15-interop/dls15-interop.pdf)
 
