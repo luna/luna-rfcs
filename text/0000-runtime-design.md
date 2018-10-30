@@ -588,6 +588,8 @@ see as most important when making this decision are as follows:
   project, which would remove features from the RTS and move them into the
   source language (Haskell) instead. Such initiatives would add work for us as
   Luna's implementors.
+- There is no simple way that we can efficiently pass debugging symbols through
+  the compilation/JIT pipeline.
 
 #### Resources
 For more information about GHC and how it could be used as part of a JIT
@@ -735,5 +737,20 @@ RTS for Luna, see the following links:
 - [Language Interoperability](https://chrisseaton.com/truffleruby/dls15-interop/dls15-interop.pdf)
 
 ### LLVM
+LLVM is a well-known and oft-used open-source compiler toolkit. It includes a
+huge set of analysis and optimisation passes, as well as flexible tools for
+building compilers. It supports JIT Compilation, accurate Garbage Collection,
+and additional features for building a runtime such as coroutines.
+
+While not specifically intended for functional language development, LLVM
+provides a paradigm-agnostic intermediate representation (LLVM IR), which can
+act as a target for any kind of language. There is significant tooling for
+working with this representation, and in addition there are Haskell bindings to
+the LLVM API for easy integration with existing Luna infrastructure.
+
+#### Feasibility
+The top-level summary of this analysis of LLVM is that, while it would involve
+_more_ work to create Luna's JIT and Runtime based on LLVM, the end result will
+allow us far more control and robustness than a solution built on top of GHC.
 
 
