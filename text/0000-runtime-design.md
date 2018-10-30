@@ -229,6 +229,9 @@ The runtime needs to support both of these use-cases.
   That means both NUMA systems and GPU-based compute. This is not a suggestion
   that Luna itself can execute on GPUs, but there should be native support in
   the RTS for efficiency in Data Science analysis use-cases.
+- The runtime should be based on a green-threads model for handling execution of
+  asynchronous code. This should work regardless of whether it is executing on
+  a SMP system or not.
 
 #### Design Considerations for Dealing with Parallelism
 
@@ -247,6 +250,8 @@ The runtime needs to support both of these use-cases.
   so as to provide a seamless experience. This means the runtime has to have
   direct access to ABI hooks in compiled code where necessary.
 - Whatever is done, it mustn't cripple performance like the Python GIL does.
+- Needs to have support for asynchronous computations, but avoid the problems
+  that naturally arrise from an `async/await`-based [approach](http://journal.stuffwithstuff.com/2015/02/01/what-color-is-your-function/).
 
 ## RTTI
 While Luna is currently simply typed (no pi-types), we fully intend for it to
@@ -518,6 +523,10 @@ model of functional language execution. This means that Luna can build on the
 work done on this, utilising an eval/apply style of evaluation model, as
 described in [Making a Fast Curry](https://github.com/sdiehl/papers/blob/master/Making_A_Fast_Curry.pdf).
 
+As for the ability to target core, Stephen Diehl has a fantastic post that is
+about [targeting core](http://www.stephendiehl.com/posts/ghc_03.html), and this
+is likely to be a useful resource.
+
 ##### The GHC Runtime System
 In addition to being a fantastic compilation target for functional languages,
 GHC is accompanied by a rich runtime system (RTS). This RTS has support for both
@@ -590,6 +599,9 @@ compiler pipeline, please see the links below:
 - [GHC Core-to-Core Passes](https://www.microsoft.com/en-us/research/wp-content/uploads/1998/09/comp-by-trans-scp.pdf)
 - [GHC Reading List](https://ghc.haskell.org/trac/ghc/wiki/ReadingList)
 - [Core Spec](https://git.haskell.org/ghc.git/blob/HEAD:/docs/core-spec/core-spec.pdf)
+- [GHC Architecture Dive](http://www.stephendiehl.com/posts/ghc_01.html)
+- [GHC IR Forms](http://www.stephendiehl.com/posts/ghc_02.html)
+- [Targeting Core](http://www.stephendiehl.com/posts/ghc_03.html)
 
 ### GraalVM
 GraalVM is a new initiative developed by Oracle Labs that aims to provide a
@@ -721,4 +733,7 @@ RTS for Luna, see the following links:
 - [GraalVM API Documentation](http://www.graalvm.org/sdk/javadoc/)
 - [Partial Evaluation and Truffle](https://chrisseaton.com/rubytruffle/pldi17-truffle/pldi17-truffle.pdf)
 - [Language Interoperability](https://chrisseaton.com/truffleruby/dls15-interop/dls15-interop.pdf)
+
+### LLVM
+
 
