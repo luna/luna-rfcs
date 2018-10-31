@@ -753,6 +753,133 @@ The top-level summary of this analysis of LLVM is that, while it would involve
 _more_ work to create Luna's JIT and Runtime based on LLVM, the end result will
 allow us far more control and robustness than a solution built on top of GHC.
 
+That doesn't, however, mean that it is the best solution. In comparison to LLVM,
+using GHC would mean that there is a significant amount less that requires
+implementation. This includes the runtime itself, with all the features that
+entails, but also a whole host of functional optimisations based on types.
+
+LLVM is provided a rich interface to Haskell via the [`llvm-hs`](https://github.com/llvm-hs/llvm-hs/)
+bindings. These are a faithful representation of the LLVM API, with some Haskell
+flavour for it to feel seamless. This is likely to result in a
+highly-maintainable runtime that is easy to imrpove with time (e.g. the
+[sixten backend sources](https://github.com/ollef/sixten/tree/master/src/Backend)
+are a good example of this). This Haskell API is also designed to eliminate as
+much of the LLVM boilerplate as possible.
+
+Furthermore, LLVM is a widely-used and highly supported toolchain. This means
+that there is significant assistance available should it be required, but also
+that bugs are likely to be fixed rapidly. It also means that LLVM is likely to
+implement rapid mitigations for security vulnerabilities such as [Spectre v1](https://llvm.org/docs/SpeculativeLoadHardening.html).
+Even more useful, however, is the suite of sophisticated tooling that comes with
+LLVM, much of which has no GHC equivalent.
+
+#### An LLVM-Based JIT
+LLVM has provided multiple APIs for just-in-time compilation during the course
+of its development. While MCJIT was, until recently, the API du-jour, the new
+ORC JIT API brings many improvements to how it can be used, including support
+for true interactive JIT applications.
+
+The big benefit of this is that we would only require a _single_ implementation
+of Luna's semantics, not the dual implementations that using GHC would require.
+For linking LLVM into the Luna binary, we get a seamless JIT experience as
+follows:
+
+1. Generate LLVM IR in memory.
+2. Pass this LLVM IR to the ORC API.
+3. Recieve back a function pointer which can be directly called.
+
+This supports true on-request compilation, tracing dependencies and automatic
+compilation of functions as needed.
+
+The ORC API offers a flexible set of controls for JIT implementation. The user
+is able to pass both functions and entire modules, and has fine-grained control
+over the optimisation pass layers executed before the dynamic compilation step.
+This means that Luna would be able to use both LLVM-standard optimisations and
+custom-written passes.
+
+Use of the LLVM API would provide support for many features required of the Luna
+runtime, including support for [zero-cost exceptions](https://llvm.org/docs/ExceptionHandling.html),
+[coroutines](https://llvm.org/docs/Coroutines.html), [DWARF debugging symbols](https://llvm.org/docs/SourceLevelDebugging.html),
+and [garbage collector integration](https://llvm.org/docs/GarbageCollection.html).
+While these aren't included with a runtime, they would likely ease the
+implementation burden of Luna's runtime significantly should the LLVM route be
+chosen.
+
+#### LLVM and Optimisation
+As an industrial-strength compiler toolchain, LLVM has significant support for
+controlling performance. The toolchain provides extensive control over memory
+layout, copying and stack usage; all things which the higher-level GHC core does
+not. This means that LLVM IR is likely to provide a better route for giving our
+users controlled performance.
+
+This performance, however, would likely initially be lower than that provided by
+GHC. This is by virtue of GHC core supporting a significant number of functional
+language optimisations that LLVM does not. These optimisations would instead
+need to be written as LLVM passes or performed directly as passes on the Luna
+IR. Nevertheless, LLVM provides robust support for optimising IR:
+
+- The LLVM toolchain builds optimisations as [IR Passes](https://llvm.org/docs/WritingAnLLVMPass.html),
+  which are IR to IR transformations. This means that user-written passes are
+  just as powerful as included passes; there is significant scope for improving
+  code performance using these passes.
+- LLVM has support for a huge number of existing [optimisation passes](https://llvm.org/docs/Passes.html).
+
+These passes, however, can only do so much in cases where the generated IR is
+pathologically bad. This means that Luna would have to take care to generate
+[sensible IR](https://llvm.org/docs/Frontend/PerformanceTips.html) for the JIT,
+especially as the initial JIT passes would be run without any except the most
+basic optimisations (e.g. constant folding).
+
+#### Foreign Languages and FFI
+LLVM is a platform used by many modern programming languages, including the
+`clang` C and C++ compiler, `rustc` the Rust compiler, and `julia` the Julia
+compiler and interpreter. All of these languages compile to LLVM IR, which opens
+up an opportunity for langauge interoperability.
+
+The IR could be used for language interoperability, with the ability to mix
+calling conventions seamlessly for IR-level FFI. The downside of this, however,
+is that exposing a high-level interface between the languages, much like GraalVM
+is able to, becomes a much more challenging task.
+
+While it operates at a lower level, FFI calls to these languages would be
+_extremely_ performant.
+
+#### Native Compilation
+Much like GHC, using LLVM as part of the Luna runtime would provide a simple
+path to native compilation of Luna binaries. LLVM started development as a
+framework for the creation of native compilers, providing LLVM IR as a
+target-agnostic representation of language semantics.
+
+As use ofthe LLVM ORC JIT involves the generation of LLVM IR from Luna code, the
+same IR can be compiled AOT to native binaries instead of on-demand by the JIT.
+Both paths are trivially supported by the LLVM API, and this could be a boon for
+Luna.
+
+#### Negatives to using LLVM
+Much like all options in this comparison, using LLVM is not without its
+downsides.
+
+- LLVM does not come with its own native runtime, though it does have support
+  for many features that the runtime would require. This results in a
+  significantly increased implementation burden for Luna's maintainers as there
+  is less existing functionality to piggyback on.
+- Writing custom passes for LLVM must be done in C++ as it is not exposed by any
+  bindings to the toolchain. They must be directly compiled into the binary, so
+  if Luna chooses to implement custom passes we would be requried to maintain
+  our own fork of LLVM.
+- While LLVM IR is, like GHC Core, a statically- and explicitly-typed language
+  representation, they operate at separate levels of sopistication. Core is much
+  higher-level than LLVM IR, and thus provides a far more sophisticated type
+  language. LLVM IR, however, is higher level than Cmm as it abstracts away
+  details around hardware (e.g. register allocations).
+- The limited type-language of LLVM IR is likely to limit many optimisations to
+  Luna IR itself, while GHC core would be able to cope with these.
+- LLVM's optimisations are targeted at imperative languages. While it would be
+  possible to duplicate many of GHC's optimisations as LLVM passes, this would
+  be a significant amount of work.
+- Using LLVM would require re-implementation of the runtime support for Luna's
+  standard library in C++ rather than Haskell.
+
 #### Resources
 For more information about LLVM and the ways it supports the design of Luna's
 runtime, please see the following links:
@@ -764,4 +891,5 @@ runtime, please see the following links:
 - [Sixten Backend](https://github.com/ollef/sixten/tree/master/src/Backend)
 - [Haskell LLVM Library](https://github.com/llvm-hs/llvm-hs/)
 - [Kaleidoscope Language in Haskell](http://www.stephendiehl.com/llvm/)
+- [Packaging LLVM](https://llvm.org/docs/Packaging.html)
 
