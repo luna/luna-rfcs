@@ -360,6 +360,7 @@ better fashion, and potentially extend this to different languages.
 - The FFI should be tied to the current back-end. As we want to support multiple
   backends, the JS backend should allow for JavaScript FFI, while the ASM
   backend should allow for C FFI.
+- This means that there should be a `Native` FFI tag for multi-target projects.
 - This flexibility should extend to the interpreted runtime.
 - FFI calls should be as close to zero-overhead in the dynamic runtime as
   possible, while in compiled code they should be zero-cost.
@@ -371,11 +372,62 @@ above. It also aims to explain why using a JIT is not _just_ a benefit for the
 Runtime and its featureset, but also for the Luna ecosystem as a whole.
 
 ### Why a JIT?
+Luna fills a truly unique niche when it comes to programming languages, and in
+order to ensure it provides the best user experience there are a significant
+number of performance requirements placed on the Luna Runtime.
+
+Meeting these requirements is no small task, especially once we begin to account
+for the highly-dynamic nature of Luna's computational graphs, and the way that
+types can change with expressions. As a result, the dynamism offered by a JIT,
+combined with the high performance that one can bring, makes it the perfect
+choice for the implementation of Luna's runtime.
 
 ### How a JIT Solves Specific Issues
+As part of the Luna Runtime, use of a JIT solves many specific issues that we
+are faced with for the new runtime. These include:
+
+- **Caching for Performance:** In order to improve Luna's performance, we want
+  to add support for dynamic caching of values that don't change. However, as
+  types and values are both first-class in Luna, the deoptimisation strategies
+  designed for use by the JIT compiler are identical to the cache eviction
+  strategies for the value cache. Furthermore, building them into the same
+  system means that far more sophisticated caching can be implemented, including
+  caching of file-system values.
+- **Dynamic Compilation:** Luna, for the most part, only needs to be interactive
+  at the layer that the user is editing. As a result, we can dynamically compile
+  the rest of the codebase with optimisations in order to gain performance. This
+  would allow the runtime to swap in optimised functions during execution to
+  provide significant performance increases. This is not true in _all_ cases,
+  however, as changes to the active layer may invalidate some optimisations made
+  by the JIT compiler.
+- **Profiling Information:** As part of the implementation of a standard tracing
+  JIT, the compiler and runtime are required to measure usage statistics
+  (including memory and CPU) for pieces of code in order to determine what to
+  optimise. Along the same lines, this tracing must have a very low performance
+  impact. As a result, it becomes trivial to implement high-performance
+  profiling of Luna code on top of the JIT tracing information.
+- **Runtime Parallelism:** A properly-designed JIT is able to not only optimise
+  functions dynamically, but trace execution paths such that opportunities for
+  automated parallelism can be exploited.
+
+This makes it clear that a JIT is likely to be an instrumental part of Luna's
+new runtime, and that a JIT tailored especially for Luna is likely to bring
+huge gains for the language.
 
 ### Additional Benefits of a JIT
+While building the Luna Runtime on top of a JIT helps to implement many of the
+requirements, it also brings with it some additional benefits.
 
+- By its very nature, a JIT has to generate assembly in memory, whether that be
+  optimised or not. This means that there is at least a partial implementation
+  of many of the features needed for the creation of full AOT compilation. As we
+  definitely want to be able to AOT compile Luna in the future, this is very
+  helpful.
+- A JIT is very appropriate for handling the interactivity of Luna. Functions
+  that are not directly editable can be dynamically compiled for higher
+  performance, while code can easily be deoptimised when it changes. This makes
+  it easier to support the type-changes as well, relying just on a correctly
+  implemented function-cache eviction strategy.
 
 ## An Analysis of JIT Architecture Options
 There are multiple options that are worth exploring when it comes to the
