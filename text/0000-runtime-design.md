@@ -753,4 +753,15 @@ The top-level summary of this analysis of LLVM is that, while it would involve
 _more_ work to create Luna's JIT and Runtime based on LLVM, the end result will
 allow us far more control and robustness than a solution built on top of GHC.
 
+#### Resources
+For more information about LLVM and the ways it supports the design of Luna's
+runtime, please see the following links:
+
+- [LLVM Reference Manual](https://llvm.org/docs/index.html).
+- [LLVM IR Reference](https://llvm.org/docs/LangRef.html)
+- [Kaleidoscope Language Tutorial](https://llvm.org/docs/tutorial/LangImpl01.html)
+- [Kaleidoscope JIT](https://llvm.org/docs/tutorial/BuildingAJIT1.html)
+- [Sixten Backend](https://github.com/ollef/sixten/tree/master/src/Backend)
+- [Haskell LLVM Library](https://github.com/llvm-hs/llvm-hs/)
+- [Kaleidoscope Language in Haskell](http://www.stephendiehl.com/llvm/)
 
