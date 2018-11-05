@@ -579,6 +579,16 @@ As for the ability to target core, Stephen Diehl has a fantastic post that is
 about [targeting core](http://www.stephendiehl.com/posts/ghc_03.html), and this
 is likely to be a useful resource.
 
+Furthermore, using GHC Core as a compilation target means that we have the
+option of going via Cmm, GHC's enhanced version of the C-- portable assembly
+language. As mentioned [here](https://lhc-compiler.blogspot.com/2009/01/why-llvm-probably-wont-replace-c.html),
+and expanded upon in [this SO question's answers](https://stackoverflow.com/questions/815998/llvm-vs-c-how-can-llvm-fundamentally-not-be-better-for-haskell-than-c),
+C-- has robust support for zero-cost garbage collection, a must for Luna.
+Furthermore, as Edward Z. Yang states in his answer to the above question, Cmm's
+model is both higher- and lower-level than LLVM IR, with support for more
+natural optimisations than LLVM's SSA style (requirements for `phi` expressions
+everywhere).
+
 ##### The GHC Runtime System
 In addition to being a fantastic compilation target for functional languages,
 GHC is accompanied by a rich runtime system (RTS). This RTS has support for both
