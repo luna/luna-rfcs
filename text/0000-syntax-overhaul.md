@@ -2386,3 +2386,12 @@ shape1 = sphere
 ```
 
 
+
+------------------------------
+
+type Vector x y z 
+type Scalar a
+
+foo a = Vector a a a
+Vector x y z . functor = foo
+map : (a -> b) -> (t : t.functor a) -> t.functor b
