@@ -2,6 +2,104 @@ NOT WORKING!!!
 
 
 
+In Haskell we've got positional type variables and thus we can traverse
+X (Y (Z Int)) using recursive type classes. How to do it in Luna? Some Generics?
+
+
+type Vector x y z
+
+
+vector a = Vector a a a
+
+
+v = Vector 1 2 3 : vector int
+
+ivector = Vector int int int
+
+
+case v of
+   ivector -> ... # WRONG
+   a -> ... 
+   
+
+
+
+-----------------------
+
+type Vector x y z
+
+vector a = Vector a a a
+
+VectorInt = Vector Int Int Int
+
+
+v = Vector 1 2 3 : vector Int
+
+
+case v of 
+    Vector x y z -> ... 
+    vector a     -> ...
+
+
+-----------------------
+
+
+
+
+type Rectangle width height
+type Circle    radius
+
+primitive a = Rectangle a a | Circle a a
+
+Rectangle.area = self.width * self.height
+Circle.area    = self.radius.pow 2 * Math.pi 
+
+
+
+primitive a = type
+
+    type Dim
+
+    Rectangle 
+        width  : a 
+        height : a
+
+    Circle
+        radius : a
+
+    area = case self
+        Rectangle w h -> w * h
+        Circle    r   -> Math.pi * self.radius.pow 2
+    
+
+
+
+f {x=5, y=10}
+
+f (type x=5 y=10)
+
+
+
+type Math
+    type Vector
+
+
+Math.Vector
+
+Vector Math
+
+
+
+foo : a -> a.item
+
+
+
+
+v = Math.Vector 
+
+
+
+
 type Vector x y z
 vector = Vector Int Int Int
 
@@ -218,14 +316,20 @@ Table of Contents
 - [Summary](#summary)
 - [Motivation](#motivation)
 - [Design Principles](#design-principles)
-    - [Invariants](#invariants)
-- [Type-System](#type-system)
-    - [Brief Introduction](#brief-introduction)
+- [Layout rules](#layout-rules)
+- [Naming rules](#naming-rules)
+- [Types](#types)
+    - [The Type System](#the-type-system)
     - [Types. Unified Classes, Modules and Interfaces](#types-unified-classes-modules-and-interfaces)
-- [New Syntax Reference](#new-syntax-reference)
-    - [Naming rules](#naming-rules)
-    - [Type signatures](#type-signatures)
-    - [Functions](#functions)
+    - [Type Signatures](#type-signatures)
+- [Functions](#functions)
+        - [Function Definition](#function-definition)
+        - [Function Type](#function-type)
+        - [Function Call](#function-call)
+            - [Uniform Function Call Syntax (UFCS)](#uniform-function-call-syntax-ufcs)
+            - [Extension Methods](#extension-methods)
+        - [Argument Names](#argument-names)
+        - [Named and default arguments](#named-and-default-arguments)
         - [Function declaration](#function-declaration)
         - [Named arguments](#named-arguments)
             - [Special unnamed type provider syntax](#special-unnamed-type-provider-syntax)
@@ -271,16 +375,20 @@ Table of Contents
 
 
 
+
+
+
 Summary
 =======
-The importance of a language's syntax cannot be understated. Good syntax is 
-concise, expressive and yet easy to use. Badly designed syntax introduces 
-confusion, leads to unreadable code, and stands in the way of the language's 
-evolution. In addition to being an obvious truth to any programmer, it can be
-seen in real world examples: just look at Haskell, whose base syntax is over 20 
-years old. These days, with Haskell entering the world of dependent types, it 
-has become abundantly clear that its syntax is not able to cope, leading to 
-confusion even amongst seasoned language users. 
+The importance of a language's syntax cannot be understated. Badly designed
+syntax introduces confusion, leads to unreadable code, and stands in the way of
+the language's evolution. Good syntax is fast to write, easy to understand by a
+whole team of developers and promotes best practices. In addition to being an
+obvious truth to any programmer, it can be seen in real world examples: just
+look at Haskell, whose base syntax is over 20 years old. These days, with
+Haskell entering the world of dependent types, it has become abundantly clear
+that its syntax is not able to cope, leading to confusion even amongst seasoned
+language users. 
 
 A language's syntax directly affects how code is structured, and as a result 
 affects what is considered to be idiomatic style. Any sensible programming 
@@ -291,16 +399,22 @@ for categorical typing, is in a position to provide the most flexible
 implementation of modules yet, unifying the concepts of modules, classes and
 interfaces.
 
+This proposal introduces a major breaking change for Luna, wholesale replacing
+portions of the Language's syntax and semantics with an entirely new model. As a
+result, this RFC aims to describe the whole new design in a form of a
+documentation with frequent annotations providing rationale for the changes.
+
+
+
 
 
 Motivation
 ==========
-The first attempt at creating a syntax for Luna was far from perfect. The focus
-of its development was that it played nicely with the language's graphical
-representation, but while it was relatively easy to use, we have found it to be
-unsatisfactory for the future goals of Luna as a programming language. Moreover,
-the current implementation has only a rudimentary module system, a poor state of
-affairs for a sophisticated language.
+The focus of the first Luna syntax was that it played nicely with the language's
+graphical representation, but while it was relatively easy to use, we have found
+it to be unsatisfactory for the future goals of Luna as a programming language.
+Moreover, the current implementation has only a rudimentary module system, a
+poor state of affairs for a sophisticated language.
 
 This RFC proposes a wholesale redesign of Luna's syntax. It covers all aspects 
 of the language and aims to provide a design that is both unified and 
@@ -319,8 +433,12 @@ system.
 
 
 
+
+
+
 Design Principles
 =================
+
 It is impossible to re-design even small part of the syntax without considering
 almost every other design decision. Over the past years we have learned that the
 only way which will brings us a step closer to a design that fits well into all
@@ -333,16 +451,13 @@ bad decisions.
 Below we present fundamental assumptions regarding how the Luna language should
 look and feel. 
 
-
-
-Invariants
-----------
+### Invariants <!-- omit in toc -->
 
 1. **The textual syntax must play well with the visual representation.**  
    Both visual and textual representations are equivalently important. Any rule
    which does not fit both worlds at the same time will be rejected.
 
-2. **Easiness in understanding is more important than minimalism.**  
+2. **Easiness in understanding is more important than design minimalism.**  
    Luna is meant to be production, not a research language. It targets a broad
    range of developers and domain experts. Thus it should be fast to write,
    comfortable to read and easy to reason about. In particular, it should
@@ -354,9 +469,9 @@ Invariants
    different people from different organizations. The more coding styles or
    design pattern rules users have to learn, the more codebases with different,
    often incompatible approaches will appear. In the ideal world, a language
-   would provide one and only one way to write and format code and this way
-   would be fast to write and easy to understand by people. Luna design should
-   be aligned with this vision.
+   would provide one and only one way to write and format code, which would also
+   be fast to write and easy to understand by people. Luna design should be
+   aligned with this vision.
 
 4. **Type level syntax = value level syntax.**  
    Luna type system is designed to be as expressive and as natural to use as
@@ -367,40 +482,218 @@ Invariants
    observe many different approaches among modern programming languages and
    learn from their mistakes. One of such biggest mistake is using different
    syntax forms or namespaces for type and value level expressions. It leads to
-   having special syntactic forms to promote values between the namespaces, like
+   having special mechanisms to promote values between the namespaces, like
    prefixing value level data with apostrophe to bring it to type level and
-   prevent name clash (see -XDataKinds in Haskell).
+   prevent name clash (see `-XDataKinds` in Haskell).
 
 5. **Small number of rules is better than large.**  
    Any special case or syntactic rule has to be remembered by the user and
    consumes important cognitive power. On the other hand, the syntax can easily
    be oversimplified, which usually leads to complex, hard to understand errors.
    Usually it is preferred to choose a solution which does not introduce any new
-   special cases, or removes some existing ones. 
+   special cases.
 
-6. **Predictable behavior.**  
-   Predictable behavior is one of the most important principles which separates
-   well designed languages from the bad designed ones. A language provides a
-   predicable behavior when its user can write code which will not break because
-   of some external conditions, like not-dependent code change. A good examples
-   of breaking this rule are standard extension methods mechanism (monkey
-   patching in Ruby, Python, JavaScript) or orphan overlapping instances in
-   Haskell.
+6. **Predictable performance and behavior.**  
+   Predictable performance and behavior is one of the most important principles
+   which separates well designed languages from the bad designed ones. A
+   language provides a predicable behavior when its user can write code which
+   will not break because of some external conditions, like not-dependent code
+   change. A good examples of breaking this rule are standard extension methods
+   mechanism (monkey patching in Ruby, Python, JavaScript) or orphan overlapping
+   instances in Haskell. Moreover, simple refactoring of the code should never
+   affect the performance. Again, consider Haskell here. Changing `func2 a =
+   func1 a` to `func2 = func1` can affect performance and it makes Haskell
+   programs very hard to reason about.
 
 
 
 
 
-Type-System
-===========
 
-Brief Introduction
-------------------
-Luna's type system is based on the notion that each type is a name for a set of
-_values_ (denoted by _constructors_). This makes the type system a [Modular
-Lattice](https://en.wikipedia.org/wiki/Modular_lattice), if you're interested.
-For an example, the type `nat` contains constructors `1, 2, 3, ...`, and is
-hence denotable by a set of its constructors. 
+Layout rules
+============
+ 
+Luna uses indentation to determine the structure of the code. It also provides a
+clear guidance on how a code should be formatted. The layout rules were designed
+to be both flexible yet enforce good practices.
+
+There is one _master rule_. Every expression with a non zero indentation is a
+sub-structure of the first earlier expression with a smaller indentation.
+
+However, there are few cases regarding how an expression with its subsequent
+indented expressions are threated: 
+
+- **Operator on the end of line**  
+  If the line ends with an operator and the subsequent line is indented, it is
+  considered to be the beginning of a new code block. The most common usage is
+  by using the arrow operator to define a new function.
+  ```haskell
+  test = a -> b -> 
+      sum = a + b
+      print 'The sum is `sum`'
+  ```
+
+- **Operator on the beginning of the subsequent line**  
+  If the subsequent line starts with an operator, it is considered to be just a
+  continuation of the previous line. The most common usage is by using the dot
+  operator to create chained method calls.
+  ```haskell
+  nums = [1..100]
+       . each random
+       . sort
+       . take 100
+  ```
+
+- **Otherwise**  
+  If there is no operator on the end of the line nor there is an operator on the
+  beginning of the subsequent line, then the indented line is considered to be a
+  separate expression, just like it was inside parentheses. The most common
+  usage is to provide named arguments.
+  ```haskell
+  geo = sphere
+      radius   = 15
+      position = vector 10 0 10
+      color    = rgb 0 1 0
+  ```
+
+
+There is sometimes a rare situation when you have a very long expression and you
+want to split it across lines and you don't want the subsequent lines to be
+threated as separate expressions. In most cases such a situation means that the
+code is wrongly structured and you re-structure it to separate method calls.
+However, if you're just looking for a dirty hack, you can use an id-operator
+(`\`) defined in the standard library, which acts just like a space:
+
+```haskell
+test = my very long expression
+    \ written in few lines
+```
+
+
+
+
+
+
+Naming rules
+============
+
+### Design <!-- omit in toc -->
+
+Naming convention unifies how code is written by different developers, increases
+the immediate understanding and allows to provide compiler with useful
+information in a very convenient fashion. In particular, pattern matching
+requires a way to distinguish between free variables and already declared ones.
+Luna uses a simple naming convention to provide such information:
+
+- All monomorphic types and constructors use capitalized names. 
+- All other entities use uncapitalized names. 
+
+Using upper case letters for constructors has important benefits. Whenever you
+see an upper case identifier, you know it is a data structure being taken apart
+or being constructed, which makes it much easier for a human to see what is
+going on in a piece of code. Moreover, while using this convention, construction
+and pattern matching is as simple as writing the right name and does not require
+any magic from the compiler.
+
+```
+consName = upperLetter, {nameChar}
+varName  = lowerLetter, {nameChar}
+```
+
+### Examples <!-- omit in toc -->
+Consider the following example:
+
+```haskell
+1: case v of
+2:     vector Int   -> ...
+3:     vector a     -> ...
+4:     Vector x y z -> ...
+```
+
+- In line 2, `vector` refers to an existing function, because it is applied with
+  a parameter.
+- In line 3, `a` is a free variable, because it is not applied to any argument
+  and has lowercase name.
+- In line 4, `Vector` is a constructor, while `x`, `y` and `z` are free
+  variables.
+
+
+
+### Current design problems <!-- omit in toc -->
+```haskell
+-- OLD SYNTAX --
+
+class Point a:
+    x, y, z :: a
+```
+
+Let's consider the above code written using old Luna syntax. It defines a new
+class (a new type) and an implicit constructor with the same name as the type.
+Currently all types, including polymorphic ones, start with an upper-case
+letter. 
+
+This approach has one major issue, namely accessing constructors is more complex
+than it should be. The original idea assumes that we can access the constructor
+using qualified name, like `p = Point.Point 1 2 3 :: Point.Point 1 2 3 :: Point
+Int`. Other ideas proposed generating smart constructors starting with
+lower-case letter, but then monomorphic smart constructors cannot be easily
+distinguished from free variables in pattern expressions.
+
+In order to properly solve the problem, let's carefully analyse all needs and
+use cases. If we allow polymorphic type names to start with upper-case letter,
+then we have to allow for some syntax to create new type sets, like the
+following one:
+
+```haskell
+-- OLD SYNTAX --
+
+type Foo t = Point t | String
+a = Point 1 2 3 :: Foo Int
+```
+
+The pipe (`|`) is an ordinary operator used to join type sets. Based on the
+`{invariant:4}` the following code have to be correct as well, because we can
+refactor every type level expression to a function / variable:
+
+```haskell
+-- OLD SYNTAX --
+
+foo t = Point t | String
+a = Point 1 2 3 :: foo Int
+```
+
+Which just breaks our original assumption. Even worse, it seems that such syntax
+allows creating functions named with capitalized first letter. The new type
+alias have to accept any valid type level expression, like `type Foo x = if x
+then Int else String`, so the following has to be accepted as well:
+
+```haskell
+-- OLD SYNTAX --
+
+type Sum a b = a + b
+def main: 
+    print (Sum 3 4)
+```
+
+Which clearly shows a flow in the design.
+
+
+
+
+
+
+Types
+=====
+
+The Type System
+---------------
+Luna is a statically typed language. It means that every variable is tagged with
+an information about its possible values. Luna's type system bases on the idea
+that each type is denoted by a set of values, called `constructors`. Formally,
+this makes the type system a [Modular
+Lattice](https://en.wikipedia.org/wiki/Modular_lattice). For an example, the
+type `Nat` contains constructors `1, 2, 3, ...`, and is hence denotable by a set
+of the possible values. 
 
 As a result, typechecking doesn't work via _unification_ as one might expect if
 they are familiar with other functional programming languages, but instead 
@@ -419,9 +712,9 @@ structural typing.
 
 Types. Unified Classes, Modules and Interfaces
 ----------------------------------------------
-We propose to unify the abstraction of classes, modules and interfaces under a
-single first-class umbrella. All of the following functionalities are provided
-by a new `type` keyword, resulting in a highly flexible language construct: 
+Luna unifies the abstraction of classes, modules and interfaces under a single
+first-class umbrella. All of the following functionalities are provided by the
+`type` keyword, resulting in a highly flexible language construct: 
 
 - **Classes.** Types provide containers for data and associated behavior.
 - **Modules.** Types provide namespacing for code and data.
@@ -433,151 +726,276 @@ possesses. These are first-class values in Luna, and can be created and
 manipulated at runtime. 
 
 
-#### Why a new keyword? <!-- omit in toc -->
+#### Why the `type` name? <!-- omit in toc -->
 While it would've been possible to use an existing keyword for this unified
 concept, we feel that existing keywords such as `module` and `class` carried too
 much baggage from their uses elsewhere. The chosen `type`, however, is very
-explicit as it describes exactly what it does in Luna. Furthermore, with this
-proposal `module ~ class ~ interface`, and all are members of the type-universe
+explicit as it describes exactly what it does in Luna. Furthermore, with the
+concept `module = class = interface`, and all are members of the type-universe
 `Type`, making it an even more appropriate choice. 
 
 
 
-
-New Syntax Reference
-====================
-This design proposes a major breaking change for Luna, wholesale replacing 
-portions of the Language's syntax and semantics with an entirely new model. As a
-result, this RFC aims to describe the changes piece-by-piece, to help the 
-reader establish a more holistic idea of the design presented here. 
-
-
-
-Naming rules
-------------
-
-### Current problems <!-- omit in toc -->
-```haskell
--- OLD SYNTAX --
-
-class Point a:
-    x, y, z :: a
-```
-
-Let's consider the above code written using old Luna syntax. It defines a new
-class (a new type) and an implicit constructor with the same name as the type.
-
-Currently all types, including polymorphic ones, start with an upper-case
-letter. This approach has one major issue, namely accessing constructors is more
-complex than it should be. The original idea assumes that we can access the
-constructor using qualified name, like `p = Point.Point 1 2 3 :: Point.Point 1 2
-3 :: Point Int`. Other ideas proposed generating smart constructors starting
-with lower-case letter, however such named constructors cannot be easily
-distinguished from free variables in pattern expressions.
-
-In order to properly solve the problem, let's carefully analyse all needs and
-use cases. If we allow both constructor and type names to start with upper-case
-letter, then we have to allow for some syntax to create new type sets, like the
-following one:
-
-```haskell
--- OLD SYNTAX --
-
-type Foo t = Point t | String
-a = Point 1 2 3 :: Foo Int
-```
-
-The pipe (`|`) is an ordinary operator used to join type sets. Based on the
-`{invariant:4}` the following code is correct as well, because we can refactor
-every type level expression to a variable:
-
-```haskell
--- OLD SYNTAX --
-
-foo t = Point t | String
-a = Point 1 2 3 :: foo Int
-```
-
-Thus, we would need to introduce some special, non-trivial rules to guarantee
-that all type names will start with an upper-case letter.
-
-Even worse, it seems that such syntax allows creating functions named with
-capitalized first letter. The new type alias have to accept any valid type
-level expression, like `type Foo x = if x then Int else String`, so the
-following has to be accepted as well:
-
-```haskell
--- OLD SYNTAX --
-
-type Sum a b = a + b
-def main: 
-    print (Sum 3 4)
-```
-
-Which clearly shows a flow in the design.
-
-
-### Proposed solution <!-- omit in toc -->
-The distinction between capitalized and uncapitalized names is used to
-disambiguate the meaning of entities and is crucial for the needs of pattern
-matching.
-
-We propose to introduce the following naming rules:
-
-- All monomorphic types use capitalized names. 
-- All other entities, including polymorphic types, are just expressions and thus
-  use uncapitalized names.
-
-
-
-
-In Luna the entities which we want to distinguish for the needs of pattern
-matching are constructors. All the other entities, including set types are just
-results of some expressions. In the light of these facts a very elegant solution
-emerges, namely only the constructor names will be capitalized, while everything
-else (including modules, interfaces, set types or functions) will use
-uncapitalized names. The proposed solution has many benefits:
-
-- Using upper case letters for constructors has important benefits. Whenever you
-  see an upper case identifier, you know it is a data structure being taken
-  apart or being constructed, which makes it much easier for a human to see what
-  is going on in a piece of code.
-
-- There are no more ambiguous syntax rules regarding new type / function
-  definition.
-
-- Construction and pattern matching is as simple as writing the right name and
-  does not require any magic from the compiler.
-
-We present formal definition for constructors and variable names below. They 
-will be used in later sections of this document.
-
-```
-consName = upperLetter, {nameChar}
-varName  = lowerLetter, {nameChar}
-```
-
-
-
-Type signatures
+Type Signatures
 ---------------
 
-### Current problems <!-- omit in toc -->
-The type signature operator `::` is used by small group of languages (mostly
-Haskell related), is not used in math and is harder to type than just a single
-`:` mark.
+Luna allows providing explicit type information by using the colon operator. The
+compiler considers type signatures as hints and is free to discard them if they
+do not provide any new information. However, if the provided hint is incorrect,
+an error is reported. 
+
+For example, the following code contains an explicit type signature for the `a`
+variable. Although the provided type tells that `a` is either an integer number
+or a text, the compiler knows its exact value and is free to use it instead of
+the more general type. Thus, no error is reported when the value is incremented
+in the next line.
+
+```haskell
+a = 17 : Int | Text
+b = a + 1
+print b
+```
+
+However, if the provided type contains more information than the currently
+inferred one, both are merged together. Consider the following example for
+reference.
+
+```haskell
+test : Int -> Int -> Int
+test = a -> b -> 
+    c = a + b
+    print c
+    c
+```
+
+Without the explicit type signature, the inferred type would be very generic,
+allowing the arguments to be of any type as long as it allows for adding the
+values and printing them to the screen. The provided type is more specific, so
+Luna would allow to provide this function only with integer numbers now.
+However, the provided type does not mention the context of the computations. The
+compiler knows that `print` uses the `IO` context, so considering the provided
+hint, the final inferred type would be `Int in c1 -> Int in c2 -> Int in IO | c1
+| c2`.
+
+It's worth to note that the type operator is just a regular operator with a very
+low precedence and it is defined in the standard library.
 
 
-### Proposed solution <!-- omit in toc -->
-We propose to replace the double colon operator `::` with a single colon one
-`:`. This change collides with current lambda syntax, however a change to lambda
-syntax is proposed in this document as well.
+### Current design problems <!-- omit in toc -->
+The current type signature operator `::` is used by small group of languages
+(mostly Haskell related), is not used in math and is harder to type than just a
+single `:` mark. Currently, the single colon operator `:` is used as lambda
+syntax, however a change to the lambda syntax is proposed in this document as 
+well.
+
+
 
 
 
 
 Functions
----------
+=========
+
+### Function Definition
+
+Luna uses the arrow operator to define unnamed functions, often referred to as
+lambda expressions. For example, the following code defines a lambda taking two
+values and returning their sum.
+
+```haskell 
+x -> y -> x + y
+```
+
+Lambdas, like any other expression, can be assigned to variables. This way we
+can define a named function.
+
+```haskell 
+sum = x -> y -> x + y
+```
+
+### Function Type
+
+As the function definition is an ordinary variable assignment, you can use the
+type expression to provide Luna with an additional information about arguments
+and the result types. If no explicit type is provided, Luna infers the most
+general type, the function itself. 
+
+```haskell
+sum : x -> y -> x + y
+sum = x -> y -> x + y
+``` 
+
+An explicit type narrows the scope of the function. For example, we can tell
+that the function accepts only integer numbers.
+
+```haskell
+sum : Int -> Int -> Int
+sum = x -> y -> x + y
+```
+
+Please note, that you are never required to provide all possible information
+about argument types. Every missing information will be automatically inferred.
+For example, the above definition does not mention the contexts of arguments and
+could be written more explicit as follows. Contexts are covered in later
+chapters of this document.
+
+```haskell
+sum : Int in c1 -> Int in c2 -> Int in c1 | c2
+sum = x -> y -> x + y
+```
+
+Every expression, including the pattern expression, can be typed by using the
+type operator. The following code is equivalent to the above one, however, using
+external type definition is much more readable, so in-place types should be used
+for debug purposes only.
+
+```haskell
+sum = (x : Int in c1) -> (y : Int in c2) -> (x + y : Int in c1 | c2)
+```
+
+
+### Function Call
+
+Luna uses whitespace to separate function arguments, which allows for very
+readable and concise code. The following code defines a function, calls it and
+prints it's result to the screen:
+
+```haskell
+sum = x -> y -> x + y
+result = sum 5 4
+print result
+```
+
+#### Uniform Function Call Syntax (UFCS)
+
+For the last decades we've been proven that the easiest way for people to thing
+about about software is to think in terms of objects that communicate with each
+other by using methods. However, the classical Object Oriented approach has many
+flaws and its concepts are often hard to be used correctly even by advanced
+developers. 
+
+Luna allows you to think in the terms of objects, but the concepts are very
+different from the ones you may know from other languages like Java or Python.
+The biggest power of the approach is that it is very simple. There is no
+inheritance or even a separate formal concept of an object! Luna has data
+structures, functions and a very powerful type system and syntax. 
+
+The Uniform Function Call Syntax unifies the ideas behind functions and methods.
+Basically, every function can be called using two equivalent syntax
+representations and you can consider every function to be a method on the first
+argument it accepts. Formally, every expression of form `func a b` is isomorphic
+to `a.func b`. For example, the following lines are equivalent:
+
+```haskell
+result = sum 4 5
+result = 4.sum 5
+```
+
+Thus, you can think about `add` both as a function as well as method of numbers.
+One important thing to note here is that the dot operator is just like any other
+operator in Luna and could be theoretically defined as:
+
+```haskell
+(.) a func = func a
+```
+
+However, its association rules are very special, but also intuitive. The
+expression `a . func b` is parsed as `(a . func) b`, while normal operators are
+parsed the other way around, like `a + func b` is parsed as `a + (func b)`.
+
+
+#### Extension Methods
+
+The first argument of a function is often referred to as the `self` argument and
+Luna allows a special syntax for defining functions with the first argument
+explicitly typed. The syntax is named `Extension Method` and it's just a
+syntactic sugar allowing thinking in terms of extending object possibilities
+with a new method. The following definitions are equivalent:
+
+```haskell
+sum = (a : Int) -> b -> a + b
+Int.sum = a -> b -> a + b
+```
+
+
+
+
+### Argument Names
+
+In most cases, function arguments are named 
+
+
+
+### Named and default arguments
+
+Every lambda argument is either provided with an unique name or is unnamed, but
+then cannot be accessed from within the lambda body. Lambda arguments can be
+provided either in form of (`name : type`) or just (`type`). Consider the
+following examples to understand it better:
+
+```haskell
+foo : x -> y -> x + y
+foo = x -> y -> x + y
+```
+
+The above code defines a function which takes two polymorphic, unrelated
+arguments and adds them together. The type tells about a single constraint, that
+we need to know how to add `x` and `y`. No other constraints are provided. We
+can change the code:
+
+```haskell
+foo : x:a -> y:a -> (x + y : a)
+foo = x:a -> y:a -> (x + y : a)
+```
+
+This time another constraint is provided as well. All `x`, `y` and the result
+are unified to the same type variable `a`. Of course you can drop the explicit
+type signature here and get the same results or simplify both lines to: 
+
+```haskell
+foo : a -> a -> a
+foo = x -> y -> z
+```
+
+This code has exactly the same meaning as the previous one. You can omit
+argument names in explicit type signature if used next to the definition. If you
+would like to use the function signature in an interface and use named
+arguments, you would also need to provide names explicitly.
+
+
+
+
+### Design <!-- omit in toc -->
+We propose removing the `def` keyword in favor of using the assignment operator
+to define both variables as well as functions. Moreover, values defined in a new
+type declaration (every non-nested function) will have postponed effects by
+default.
+
+This solution is simple, intuitive and provides only one valid syntax for every
+use case. To better understand the concepts, please refer to the following code
+examples.
+
+```haskell
+-- OLD SYNTAX --
+
+def test :: Text in IO
+def test: 
+    def mkMsg s: s + '!' 
+    print 'Whats your name?'
+    name = readLine
+    print (mkMsg name)
+```
+
+```haskell
+-- NEW SYNTAX -- 
+
+test : text in IO
+test =
+    mkMsg s = s + '!' 
+    print 'Whats your name?'
+    name = readLine
+    print (mkMsg name)
+```
 
 ### Function declaration
 #### Current problems <!-- omit in toc -->
@@ -663,37 +1081,7 @@ def main:
 ```
 
 
-#### Proposed solution <!-- omit in toc -->
-We propose removing the `def` keyword in favor of using the assignment operator
-to define both variables as well as functions. Moreover, values defined in a new
-type declaration (every non-nested function) will have postponed effects by
-default.
 
-This solution is simple, intuitive and provides only one valid syntax for every
-use case. To better understand the concepts, please refer to the following code
-examples.
-
-```haskell
--- OLD SYNTAX --
-
-def test :: Text in IO
-def test: 
-    def mkMsg s: s + '!' 
-    print 'Whats your name?'
-    name = readLine
-    print (mkMsg name)
-```
-
-```haskell
--- NEW SYNTAX -- 
-
-test : text in IO
-test =
-    mkMsg s = s + '!' 
-    print 'Whats your name?'
-    name = readLine
-    print (mkMsg name)
-```
 
 
 ### Named arguments
