@@ -955,3 +955,22 @@ runtime, please see the following links:
 - [Kaleidoscope Language in Haskell](http://www.stephendiehl.com/llvm/)
 - [Packaging LLVM](https://llvm.org/docs/Packaging.html)
 
+## Thinking about JITs
+To get the kind of performance we need, and to support some of the more advanced
+features of the Luna Runtime, the new design will be based around a JIT compiler
+at its core. This section aims to elucidate and clarify some thoughts on the
+design and development of an appropriate JIT compiler.
+
+#### An Overview of JIT Architecture
+
+##### Tracing Design for Luna
+
+#### JIT Startup Performance
+
+#### Optimisation Opportunities in JITs
+
+#### Resources
+The following are useful resources when thinking about building JIT compilers.
+
+- [LuaJIT Source Code](https://github.com/LuaDist/luajit)
+- [Are JITs Winning?](http://lambda-the-ultimate.org/node/3851)
