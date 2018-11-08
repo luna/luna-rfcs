@@ -666,6 +666,7 @@ compiler pipeline, please see the links below:
 - [GHC Architecture Dive](http://www.stephendiehl.com/posts/ghc_01.html)
 - [GHC IR Forms](http://www.stephendiehl.com/posts/ghc_02.html)
 - [Targeting Core](http://www.stephendiehl.com/posts/ghc_03.html)
+- [Grin](https://github.com/grin-tech/grin)
 
 ### GraalVM
 GraalVM is a new initiative developed by Oracle Labs that aims to provide a
@@ -954,4 +955,8 @@ runtime, please see the following links:
 - [Haskell LLVM Library](https://github.com/llvm-hs/llvm-hs/)
 - [Kaleidoscope Language in Haskell](http://www.stephendiehl.com/llvm/)
 - [Packaging LLVM](https://llvm.org/docs/Packaging.html)
+
+## Notes
+
+- TC, Optimiser can access the JIT. In place graph mutation for optimisations.
 
