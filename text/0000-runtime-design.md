@@ -956,6 +956,57 @@ runtime, please see the following links:
 - [Kaleidoscope Language in Haskell](http://www.stephendiehl.com/llvm/)
 - [Packaging LLVM](https://llvm.org/docs/Packaging.html)
 
+## Thinking about JITs
+To get the kind of performance we need, and to support some of the more advanced
+features of the Luna Runtime, the new design will be based around a JIT compiler
+at its core. This section aims to elucidate and clarify some thoughts on the
+design and development of an appropriate JIT compiler.
+
+#### An Overview of JIT Architecture
+
+##### Tracing Design for Luna
+
+#### JIT Startup Performance
+The main downside of a JIT compiler-based runtime is that you have to make a
+careful tradeoff between startup time and initial performance. The more time
+taken to optimise and precompute portions of the program, the longer it will
+take for the runtime to start up.
+
+A similar problem is the issue of warm-up time. This refers to how long the JIT
+takes to achieve optimal performance for a given piece of code. In essence, the
+more precomputation done, the shorter the warm-up time, but the longer the start
+up time.
+
+There is a minimal set of tasks that would need to take place before Luna's JIT
+would be able to start:
+
+1. Lexing and Parsing of Luna source code, coupled with generation of the Luna
+   IR graph.
+2. Typechecking of Luna IR and any reduction that may take place (see later).
+3. Generation of GHC Core from Luna IR.
+4. Translation of Core to GHCi Bytecode for initial interpretation.
+
+While none of these steps are _inherently_ slow, as demonstrated by the JVM,
+which can start up relatively quickly, these are still enough to create some
+kind of a delay. The problem therefore becomes one of ensuring the above
+processes take as little time as possible in order to ensure that Luna's runtime
+is responsive.
+
+##### Techniques for Minimising Startup Performance
+
+##### Techniques for Minimising Warm-Up Time
+
+#### Optimisation Opportunities in JITs
+The key idea behind JIT optimisations is that
+
+##### Adaptive Optimisations in Luna
+
+#### Resources
+The following are useful resources when thinking about building JIT compilers.
+
+- [LuaJIT Source Code](https://github.com/LuaDist/luajit)
+- [Are JITs Winning?](http://lambda-the-ultimate.org/node/3851)
+
 ## Notes
 
 - TC, Optimiser can access the JIT. In place graph mutation for optimisations.
