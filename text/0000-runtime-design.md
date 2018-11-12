@@ -992,14 +992,81 @@ kind of a delay. The problem therefore becomes one of ensuring the above
 processes take as little time as possible in order to ensure that Luna's runtime
 is responsive.
 
-##### Techniques for Minimising Startup Performance
+##### Techniques for Minimising Startup Time
+As mentioned above, there is a set of tasks that _must_ take place for the JIT
+to startup. However, there are a number of techniques that can be utilised to
+reduce this as much as possible:
+
+- **Precompilation:** It is possible to precompile commonly-used functionality
+  to an appropriate stage. The standard library, for example, could be
+  distributed as bytecode so that it doesn't require compilation each time.
+- **Parallelism:** The listed startup tasks should happen in parallel as much
+  as possible. The biggest opportunity for this is likely the generation of GHC
+  Core from the Luna IR, but parsing can also potentially be parallelised (but
+  requires discovery to be done properly).
 
 ##### Techniques for Minimising Warm-Up Time
+As a tradeoff with startup time, warm-up time can be decreased by performing
+more work ahead of time. Luna has a unique advantage over a standard tracing
+JIT in that the interactivity can provide hints as to what needs to be compiled
+and optimised.
+
+- **Dynamic Layering:** Precompilation of portions of code not in the active
+  layer could be performed. This would provide increased performance, but there
+  must be significant care taken to ensure that appropriate code is deoptimised
+  when necessary (de-specialisation).
+- **Optimisation without Tracing:** Code that is compiled in the background can
+  have general optimisations done to it that can then be improved upon using the
+  input from the tracing process later on.
+- **Static Tracing:** The decisions on the order for background optimisation can
+  be made via static analysis on the Luna IR graph. The code that is used
+  'soonest' from the `main` function should be compiled and optimised first.
+
+One of the primary issues with long warm-up times in JIT compilers is that they
+become inappropriate for short-term execution, providing less-than-ideal
+performance under such circumstances. There are, however, a few techniques that
+can be employed to reduce the problem:
+
+- **Project Caching:** As much of the work as possible done by the JIT should be
+  cached in a `Package/.cache/IR` directory that should be default excluded from
+  version control. This is separate from any precompiled IR that _should_ be
+  distributed. Keeping these artifacts (e.g. Core, bytecode) ensures that, where
+  things have not changed, the work does not need to be done again.
+- **Precompilation:** Commonly used functionality (e.g. the stdlib) should be
+  precompiled on the first execution, and even distributed as core or bytecode.
+
+It should be noted that tracing becomes less useful in such a setting, but as
+many Luna sessions take place in an interactive environment (e.g. Luna Studio or
+the forthcoming REPL), the ability to generate and optimise traces will be very
+important.
 
 #### Optimisation Opportunities in JITs
-The key idea behind JIT optimisations is that
+The key idea behind JIT optimisations is that runtime profiling information can
+be taken advantage of to provide performance beyond that of a standard AOT
+compilation strategy.
 
 ##### Adaptive Optimisations in Luna
+
+#### Security with JIT Compilers
+While JIT compilers can provide excellent performance without the overhead of
+precompilation, they are not a panacea and come with their own issues.
+
+The predominant issue is a _security_ one, as JIT compilers are those that
+fundamentally rely on executable data. Any vulnerability in the JIT can hence
+have the potential for a heap-pollution attack. Furthermore, dynamic reflection
+capabilities that are often used to support runtime inspection and debugging,
+such functionality can further increase the attack surface if not designed in a
+sensible fashion.
+
+In order to help reduce this attack surface, care must be taken to implement the
+W/X mitigation where code is only executable using the following process:
+
+1. Code is written to memory.
+2. It is marked as read-only.
+3. It is marked executable.
+
+These must be atomic and discrete steps in order to ensure that the attack
+surface is reduced.
 
 #### Resources
 The following are useful resources when thinking about building JIT compilers.
