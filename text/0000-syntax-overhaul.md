@@ -2389,9 +2389,49 @@ shape1 = sphere
 
 ------------------------------
 
-type Vector x y z 
-type Scalar a
+```
+# How might this all work with multiparam interfaces?
 
-foo a = Vector a a a
-Vector x y z . functor = foo
-map : (a -> b) -> (t : t.functor a) -> t.functor b
+type Functor t =
+    map : (a -> b) -> (f : t.functor a) -> (g : t.functor b)
+
+type Applicative (t : Functor) =
+    type f = t.applicative a
+    
+    # Arguments can be named but don't need to be
+    pure  : a -> f a
+    (<*>) : f (a -> b) -> (g : f a) -> (h : f b)
+
+type Monad (t : Applicative) = 
+    type m = t.monad a
+    
+    (>>=) : m a -> (a -> m b) -> m b
+
+type Semigroup t =
+    type s = t.semigroup a
+    
+    (<>) : s -> s -> s
+        
+type Monoid (t : Semigroup) =
+    type m = t.monoid a
+    
+    mempty = m
+    
+type Convertible a b =
+    
+type Vector =
+    x : Monoid
+    y : Monoid
+    z : Monoid
+   
+    add : Vector -> Vector -> Vector
+    add (Vector x y z) (Vector x' y' z') = Vector (x + x') (y + y') (z + z')
+   
+    # What happens with these names?
+    type functor a   = Vector a a a
+    type semigroup a = Vector a a a
+    type monoid a    = Vector a a a
+    
+type Text =
+    
+```
