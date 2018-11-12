@@ -2461,20 +2461,20 @@ type Text =
     text : String -> Self
     text str = ... # do stuff
 
-    # This still doesn't quite work...
-    type functor = Text
+    # Can explicitly ignore type arguments in producing the projection
+    type functor _ = Text
     
-    map : (CodePoint -> CodePoint) -> self.functor -> self.functor
+    map : (CodePoint -> CodePoint) -> self.functor CodePoint -> self.functor CodePoint
     map f tx = ...
 
-    type semigroup = Text
+    type semigroup _ = Text
     
-    (<>) : self.semigroup -> self.semigroup -> self.semigroup
+    (<>) : self.semigroup Void -> self.semigroup Void -> self.semigroup Void
     (<>) tx tx' = concat tx tx'
 
-    type monoid = Text
+    type monoid _ = Text
     
-    mempty : self.monoid
+    mempty : self.monoid Void
     mempty = ""
     
 ```
