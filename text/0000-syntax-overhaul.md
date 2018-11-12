@@ -2395,43 +2395,92 @@ shape1 = sphere
 type Functor t =
     map : (a -> b) -> (f : t.functor a) -> (g : t.functor b)
 
+# Can be written with a nested type to make things clearer
 type Applicative (t : Functor) =
-    type f = t.applicative a
+    type f = t.applicative
     
     # Arguments can be named but don't need to be
     pure  : a -> f a
     (<*>) : f (a -> b) -> (g : f a) -> (h : f b)
 
 type Monad (t : Applicative) = 
-    type m = t.monad a
+    type m = t.monad
     
     (>>=) : m a -> (a -> m b) -> m b
 
 type Semigroup t =
-    type s = t.semigroup a
+    type s = t.semigroup
     
     (<>) : s -> s -> s
         
 type Monoid (t : Semigroup) =
-    type m = t.monoid a
+    type m = t.monoid
     
     mempty = m
     
 type Convertible a b =
+    convert : a -> b
     
+type Default a =
+    def : a
+
 type Vector =
-    x : Monoid
-    y : Monoid
-    z : Monoid
+    x : (Monoid, Default)
+    y : (Monoid, Default)
+    z : (Monoid, Default)
    
     add : Vector -> Vector -> Vector
     add (Vector x y z) (Vector x' y' z') = Vector (x + x') (y + y') (z + z')
    
     # What happens with these names?
-    type functor a   = Vector a a a
+    type functor a = Vector a a a
+
+    # Signature not needed here, but can exist for reference
+    map : (a -> b) -> self.functor a -> self.functor b
+    map f (Vector x y z) = Vector (f a) (f b) (f c)
+
     type semigroup a = Vector a a a
-    type monoid a    = Vector a a a
+
+    (<>) : self.semigroup a -> self.semigroup a -> self.semigroup a
+    (<>) v1 v2 = add v1 v2
+
+    type monoid a = Vector a a a
+
+    mempty : self.monoid a
+    mempty = Vector def def def
+
+    # How would we express constraints like `Convertible b a, Convertible c a`?
+    # convert : (b.convertible a, c.convertible a) => Vector a b c -> [a] ?
+    convert : Vector a b c -> [a]
+    convert (Vector x y z) = [x, y, z]
     
 type Text =
+    underlyingByteArray : ByteArray
+    length : UInt64
+
+    text : String -> Self
+    text str = ... # do stuff
+
+    # This still doesn't quite work...
+    type functor = Text
+    
+    map : (CodePoint -> CodePoint) -> self.functor -> self.functor
+    map f tx = ...
+
+    type semigroup = Text
+    
+    (<>) : self.semigroup -> self.semigroup -> self.semigroup
+    (<>) tx tx' = concat tx tx'
+
+    type monoid = Text
+    
+    mempty : self.monoid
+    mempty = ""
     
 ```
+
+Unanswered questions:
+
+- How should this interact with multiparameter typeclasses
+- How do we express constraints on the instances
+- How exactly should it work on Text and the like?
