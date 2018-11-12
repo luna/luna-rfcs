@@ -963,8 +963,25 @@ at its core. This section aims to elucidate and clarify some thoughts on the
 design and development of an appropriate JIT compiler.
 
 #### An Overview of JIT Architecture
+The design of a JIT compiler is fundamentally based on the ability to hot-swap
+compiled code for interpreted code in a seamless fashion. This can be performed
+in many ways, but for Luna it will require compilation of IR to binary code in
+memory, then prepared for direct execution _in process_.
 
-##### Tracing Design for Luna
+The benefit of doing so is that the resultant execution is much faster than any
+direct-interpretation based approach, but suffers the pentalty of a small lag
+at startup.
+
+A JIT takes arbitrary portions of code (e.g. functions, traces, modules), and
+translates them to machine code to aid in performance. These artifacts are then
+cached for later reuse. The choice of exactly _what_ gets optimised is one of
+the key design decisions for a JIT. In Luna's case, it is likely that a hybrid
+approach will be required, combining tracing, speculative compilation, method
+JITing and sophisticated dependency analysis.
+
+All JITs rely on deep knowledge of their target language's execution model and
+the underlying language design. It is only through exploiting this that the best
+performance can be obtained.
 
 #### JIT Startup Performance
 The main downside of a JIT compiler-based runtime is that you have to make a
@@ -1043,9 +1060,114 @@ important.
 #### Optimisation Opportunities in JITs
 The key idea behind JIT optimisations is that runtime profiling information can
 be taken advantage of to provide performance beyond that of a standard AOT
-compilation strategy.
+compilation strategy. The optimisations can rely on information about the exact
+architecture on which the code is executing, and can exploit this for better
+performance. This permits optimisations such as:
+
+- **Full-System Optimisations:** The JIT is capable of performing system-level
+  optimisations (e.g. aggressive inlining) without needing to do so
+  speculatively. This allows elision of the runtime checks that an AOT compiler
+  would have to insert, thereby increasing performance.
+- JITs are also able to rearrange code for better cache behaviour. This should
+  be possible even in Luna's case, using tracing to optimise the code to be
+  executed in memory.
+
+All JITs are capable of performing a fairly standard set of optimisations, but
+these (inlining, constant folding, CSE, escape analysis) can be improved upon by
+exploiting language-specific information.
+
+##### Tracing for Luna
+The functional nature of Luna, enhanced by the visual syntax, results in a
+language that is highly amenable to a tracing-based optimisation approach. The
+way that tracing would likely operate for Luna is as follows:
+
+1. Profiling information is collected during execution. This is traditionally
+   for loops (or recursive calls), but can be augmented to compute hot paths and
+   other useful information.
+2. Once a code path is considered 'hot', the JIT records an execution trace of
+   the exact instructions executed, incvluding functions for inlining. This
+   trace is often stored as IR, but Luna can do better by annotating the IR
+   graph.
+3. The resultant trace consists of one execution path, which can be optimised
+   easily. Guard instructions are inserted as appropriate into the trace to
+   ensure that the assumptions made during collection still hold.
+4. The trace is optimised, including CSE, dead-code elimination, escape
+   analysis, heavy inlining and constant folding.
+5. The compiled trace is executed until a guard fails, forcing deoptimisation.
+
+This process can be improved upon by exploitation of language specifics. Luna's
+advanced structural type system is capable of encoding many guarantees in the
+types. As a result, a significant number of guards may be able to be elided.
+Furthermore, alterations to type information are already intended to trigger
+both deoptimisation and cache eviction, furtehr eliminating the need for many
+guard instructions.
+
+As a functional language, Luna's JIT would be able to start execution traces at
+function calls, recursive loops and FFI boundaries, exploiting the Luna IR graph
+to collect and store hyperblock identification information. The region selection
+algorithm for this is always very language specific, and while hints can be
+obtained from codebases such as LuaJIT, it will inherently be highly coupled to
+Luna's execution semantics.
+
+Effective tracing inherently requires the collection of profiling information in
+order to decide when to collect a trace. Furthermore, Luna's forthcoming ability
+to provide visual performance analysis of code requires the same. This means
+that the profiling information collection should introduce as little overhead
+as possible.
+
+It is likely that augmenting the Luna IR graph with trace information will be
+the most effective and performant way to do this. Nevertheless, the collection
+of statistics needs to be minimally intrusive, so it is suggested that using
+CPU performance counters can be sensible.
 
 ##### Adaptive Optimisations in Luna
+The dynamic nature of Luna means that tracing is not the _only_ technique that
+should be employed in the Luna JIT. Adaptive optimisation is the process of
+using runtime information to dynamically recompile code with appropriate
+optimisations. This is not the same technique as tracing, as it does not collect
+execution traces, instead relying on call counts (and similar) for functions.
+
+Luna could potentially exploit this using the following techniques:
+
+- **Optimisation Layers:** Where code is executed frequently, it could be run
+  through increasingly aggressive optimisation layers to provide better
+  performance.
+- **Tailored Passes:** Based on the kinds of execution that functions are seeing
+  it is possible to select sets of Luna IR and GHC Core optimisation passes to
+  best improve that function's performance.
+
+##### Manual Optimisation Control in JITs
+There is very little literature available that deals with exposing manual
+controls for function optimisation and deoptimisation in JITs. Most JIT
+architectures are based on automated processes, so the interaction between the
+manual and automatic is not very well covered.
+
+Luna's usage model means that there is information not encoded by the types or
+runtime about which functions can be optimised heavily. It is those not being
+directly edited by the user that become candidates for increased optimisation,
+and hence the compiler needs to expose calls to hint (on the IR graph) about
+such usage to the JIT.
+
+#### Building the Luna JIT
+The _exact_ architecture for Luna's JIT compiler is still somewhat up in the
+air, even though it seems fairly certain that it will be based on GHC. The main
+question that is still open is whether building a JIT will require just one
+(core generation) or two (core generation and direct interpretation)
+implementations of the language semantics.
+
+The main sticking point in discussions so far is that typechecking and
+optimising the Luna IR requires compile-time code execution. The simplest way
+to do this woul dbe to create an interpreter that directly executes Luna IR, but
+this is inherently going to be the slowest possible design. While it is likely
+that gains over the existing interpreter can be realised, direcct operation on
+a rich format like the graph will never be as quick as operating on bytecode.
+
+The second, and more attractive option is to perform code generation and
+compilation to bytecode during typechecking and optimisation. This would require
+just _one_ implementation of the language semantics, increasing maintainability.
+The typechecker and optimiser would be given access to the JIT, allowing them to
+execute Luna code where necessary. The result could then be used to update the
+IR graph directly.
 
 #### Security with JIT Compilers
 While JIT compilers can provide excellent performance without the overhead of
@@ -1073,8 +1195,4 @@ The following are useful resources when thinking about building JIT compilers.
 
 - [LuaJIT Source Code](https://github.com/LuaDist/luajit)
 - [Are JITs Winning?](http://lambda-the-ultimate.org/node/3851)
-
-## Notes
-
-- TC, Optimiser can access the JIT. In place graph mutation for optimisations.
 
