@@ -176,6 +176,22 @@ provides the following commands for use within a project:
   resolution operation. Each operation has an associated hash. When called with
   a hash, it rolls back the project's dependencies to the specified state.
 
+### Version Resolution
+
+A build matrix would not store exact package dependencies; instead, it would
+store an `N+2`-dimensional sparse matrix of known good build configurations for
+each package, where `N` is the number of dependencies (and each of those
+dimensions stores the version of the dependency) and the extra two dimensions
+are for operating systems and for architecture.
+
+*Note: A "good build configuration" is one that can build in both debug and
+release mode, as well as pass all of the package's test suite.*
+
+Luna Build would have a way to compute dependency resolution for build
+configurations that have not been tested, but when a build configuration
+succeeds for an official version, that build configuration would be sent to the
+Luna Build repository and added to the package's build matrix.
+
 This RFC suggests the use of [Z3](https://github.com/Z3Prover/z3) for dependency
 resolution as it is a very well-optimised constraint solver and already has
 [Haskell Bindings](https://hackage.haskell.org/package/z3).
