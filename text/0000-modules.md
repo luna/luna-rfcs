@@ -451,6 +451,10 @@ providing an explicit name, this is highly impractical for most places where an
 anonymous type becomes useful. This shorthand provides a way to get the same
 benefit without the syntactic issues of the former. 
 
+A key, and potentially obvious feature of anonymous types is that they can allow
+for polymorphic records in Luna. All types are backed by polymorphic records,
+and row-extension is a primitive operation with this new module system. 
+
 ### Anonymous Types as Types
 When used in a type context, an anonymous type acts as a specification for an
 interface that must be filled. This specification can contain anything from
