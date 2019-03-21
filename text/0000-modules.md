@@ -453,7 +453,11 @@ benefit without the syntactic issues of the former.
 
 A key, and potentially obvious feature of anonymous types is that they can allow
 for polymorphic records in Luna. All types are backed by polymorphic records,
-and row-extension is a primitive operation with this new module system. 
+and row-extension is a primitive operation with this new module system. Luna 
+would not be the first to embrace row extension, lacks constraints, and truly
+polymorphic records as a primitive (e.g. [Expresso](https://github.com/willtim/Expresso))
+but would likely be the first to combine it with a unified module and type 
+system.
 
 ### Anonymous Types as Types
 When used in a type context, an anonymous type acts as a specification for an
