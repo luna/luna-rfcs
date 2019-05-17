@@ -3,12 +3,7 @@
     style="margin: 0 auto;">
 </p>
 <h1 align="center">Luna RFCs</h1>
-<h3 align="center">
-Visual and textual functional programming language with a focus on productivity,
-collaboration and development ergonomics.
-</h3>
 
-## Introduction
 Like any Open Source language, Luna welcomes interaction from the community, as
 we believe that only through the community's suggestions and feedback can we
 make Luna the best it can be.
